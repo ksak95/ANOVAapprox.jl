@@ -26,6 +26,7 @@ mutable struct approx
     N::Vector{Int}
     trafo::GroupedTransform
     fc::Dict{Float64,GroupedCoefficients}
+    dcos::Vector{Bool}
 
     function approx(
         X::Matrix{Float64},
@@ -33,6 +34,7 @@ mutable struct approx
         U::Vector{Vector{Int}},
         N::Vector{Int},
         basis::String = "cos",
+        dcos::Vector{Bool} = Vector{Bool}([])
     )
         if basis in bases
             M = size(X, 2)
@@ -58,6 +60,15 @@ mutable struct approx
                 bw = N
             end
 
+            if basis == "expcos"
+                if length(dcos) == 0
+                    error("please call approx with dcos for a NFFCT transform.")
+                end
+                if length(dcos) != length(N)
+                    error("dcos must have an entry for every dimension.")
+                end
+            end
+
             if (
                 basis == "per" ||
                 basis == "chui1" ||
@@ -70,6 +81,13 @@ mutable struct approx
                 error("Nodes need to be between 0 and 1.")
             elseif (basis == "cheb") && ((minimum(X) < -1) || (maximum(X) > 1))
                 error("Nodes need to be between -1 and 1.")
+            elseif (basis == "expcos") 
+                if (minimum(X[dcos,:]) < 0) || (maximum(X[dcos,:]) > 1)
+                    error("Nodes must be between 0 and 0.5 for cosinus dimensions.")
+                end
+                if (minimum(X[(.!dcos),:]) < -0.5) || (maximum(X[(.!dcos),:]) > 0.5)
+                    error("Nodes must be between -0.5 and 0.5 for exponentional dimensions.")
+                end
             end
 
             Xt = copy(X)
@@ -86,8 +104,8 @@ mutable struct approx
                 Xt ./= 4
             end
 
-            trafo = GroupedTransform(gt_systems[basis], U, bw, Xt)
-            return new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}())
+            trafo = GroupedTransform(gt_systems[basis], U, bw, Xt, dcos)
+            return new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}(), dcos)
         else
             error("Basis not found.")
         end
@@ -100,9 +118,10 @@ function approx(
     ds::Int,
     N::Vector{Int},
     basis::String = "cos",
+    dcos::Vector{Bool} = Vector{Bool}([]),
 )
     Uds = get_superposition_set(size(X, 1), ds)
-    return approx(X, y, Uds, N, basis)
+    return approx(X, y, Uds, N, basis, dcos)
 end
 
 
@@ -253,7 +272,7 @@ function evaluate(
         Xt ./= 4
     end
 
-    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt)
+    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt, a.dcos)
     return trafo * a.fc[λ]
 end
 
@@ -328,7 +347,7 @@ function evaluateANOVAterms(
         values = zeros(Float64, size(Xt)[2], length(a.U))
     end
     
-    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt)
+    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt, a.dcos)
 
     for j=1:length(a.U)
         u = a.U[j]
