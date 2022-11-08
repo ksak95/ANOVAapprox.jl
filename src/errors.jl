@@ -153,7 +153,8 @@ function get_L2error(a::approx, norm::Float64, bc_fun::Function, λ::Float64)::F
             k = index_set[:, i]
             error += abs(bc_fun(k) - a.fc[λ][i])^2 - abs(bc_fun(k))^2
         end
-
+        println(sqrt(error))
+        println(norm)
         return sqrt(error) / norm
     else
         error("The L2-error is not implemented for this basis")
