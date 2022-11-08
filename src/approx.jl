@@ -153,7 +153,7 @@ function approximate(
         end
     end
 
-    if a.basis == "per"
+    if (a.basis == "per" || a.basis == "expcos")
         what = GroupedCoefficients(a.trafo.setting, complex(w))
     else
         what = GroupedCoefficients(a.trafo.setting, w)
