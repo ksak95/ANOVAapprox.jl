@@ -64,7 +64,7 @@ mutable struct approx
                 if length(dcos) == 0
                     error("please call approx with dcos for a NFFCT transform.")
                 end
-                if length(dcos) != length(N)
+                if length(dcos) < maximum(U)[1]
                     error("dcos must have an entry for every dimension.")
                 end
             end
