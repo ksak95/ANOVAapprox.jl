@@ -82,11 +82,15 @@ mutable struct approx
             elseif (basis == "cheb") && ((minimum(X) < -1) || (maximum(X) > 1))
                 error("Nodes need to be between -1 and 1.")
             elseif (basis == "expcos") 
-                if (minimum(X[dcos,:]) < 0) || (maximum(X[dcos,:]) > 1)
-                    error("Nodes must be between 0 and 0.5 for cosinus dimensions.")
+                if sum(dcos) > 0
+                    if (minimum(X[dcos,:]) < 0) || (maximum(X[dcos,:]) > 1)
+                        error("Nodes must be between 0 and 0.5 for cosinus dimensions.")
+                    end
                 end
-                if (minimum(X[(.!dcos),:]) < -0.5) || (maximum(X[(.!dcos),:]) > 0.5)
-                    error("Nodes must be between -0.5 and 0.5 for exponentional dimensions.")
+                if sum(.!dcos)>0
+                    if (minimum(X[(.!dcos),:]) < -0.5) || (maximum(X[(.!dcos),:]) > 0.5)
+                        error("Nodes must be between -0.5 and 0.5 for exponentional dimensions.")
+                    end
                 end
             end
 
