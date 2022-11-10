@@ -1,9 +1,11 @@
+using ANOVAapprox
+
 d = 3
 ds = 2
 M = 10_000
 bw = [100, 10]
 
-X = rand(rng, d, M)
+X = rand(d, M)
 y = rand(M)
 
 U = Vector{Vector{Int64}}(undef, 3)
