@@ -3,7 +3,7 @@ module ANOVAapprox
 using GroupedTransforms,
     LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions
 
-bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4", "expcos"]
+bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4", "mixed"]
 types = Dict(
     "per" => ComplexF64,
     "cos" => Float64,
@@ -13,7 +13,7 @@ types = Dict(
     "chui2" => Float64,
     "chui3" => Float64,
     "chui4" => Float64,
-    "expcos" => ComplexF64,
+    "mixed" => ComplexF64,
 )
 vtypes = Dict(
     "per" => Vector{ComplexF64},
@@ -24,7 +24,7 @@ vtypes = Dict(
     "chui2" => Vector{Float64},
     "chui3" => Vector{Float64},
     "chui4" => Vector{Float64},
-    "expcos" => Vector{ComplexF64},
+    "mixed" => Vector{ComplexF64},
 )
 gt_systems = Dict(
     "per" => "exp",
@@ -35,7 +35,7 @@ gt_systems = Dict(
     "chui2" => "chui2",
     "chui3" => "chui3",
     "chui4" => "chui4",
-    "expcos" => "expcos",
+    "mixed" => "mixed",
 )
 
 function get_orderDependentBW(U::Vector{Vector{Int}}, N::Vector{Int})::Vector{Int}

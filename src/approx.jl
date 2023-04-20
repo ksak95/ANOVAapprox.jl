@@ -26,7 +26,7 @@ mutable struct approx
     N::Vector{Int}
     trafo::GroupedTransform
     fc::Dict{Float64,GroupedCoefficients}
-    dcos::Vector{Bool}
+    dcos::Vector{String}
 
     function approx(
         X::Matrix{Float64},
@@ -34,7 +34,7 @@ mutable struct approx
         U::Vector{Vector{Int}},
         N::Vector{Int},
         basis::String = "cos",
-        dcos::Vector{Bool} = Vector{Bool}([])
+        dcos::Vector{String} = Vector{String}([])
     )
         if basis in bases
             M = size(X, 2)
@@ -60,7 +60,7 @@ mutable struct approx
                 bw = N
             end
 
-            if basis == "expcos"
+            if basis == "mixed"
                 if length(dcos) == 0
                     error("please call approx with dcos for a NFFCT transform.")
                 end
@@ -81,17 +81,6 @@ mutable struct approx
                 error("Nodes need to be between 0 and 1.")
             elseif (basis == "cheb") && ((minimum(X) < -1) || (maximum(X) > 1))
                 error("Nodes need to be between -1 and 1.")
-            elseif (basis == "expcos") 
-                if sum(dcos) > 0
-                    if (minimum(X[dcos,:]) < 0) || (maximum(X[dcos,:]) > 1)
-                        error("Nodes must be between 0 and 0.5 for cosinus dimensions.")
-                    end
-                end
-                if sum(.!dcos)>0
-                    if (minimum(X[(.!dcos),:]) < -0.5) || (maximum(X[(.!dcos),:]) > 0.5)
-                        error("Nodes must be between -0.5 and 0.5 for exponentional dimensions.")
-                    end
-                end
             end
 
             Xt = copy(X)
@@ -122,7 +111,7 @@ function approx(
     ds::Int,
     N::Vector{Int},
     basis::String = "cos",
-    dcos::Vector{Bool} = Vector{Bool}([]),
+    dcos::Vector{String} = Vector{String}([]),
 )
     Uds = get_superposition_set(size(X, 1), ds)
     return approx(X, y, Uds, N, basis, dcos)
@@ -157,7 +146,15 @@ function approximate(
         end
     end
 
-    if (a.basis == "per" || a.basis == "expcos")
+    if !isnothing(nodeweights)
+        if (length(nodeweights) != length(a.y))
+            error("The length of the nodeweights Vector doesnt match the Data.")
+        else
+            nw = nodeweights
+        end
+    end
+
+    if (a.basis == "per" || a.basis == "mixed")
         what = GroupedCoefficients(a.trafo.setting, complex(w))
     else
         what = GroupedCoefficients(a.trafo.setting, w)
@@ -173,7 +170,7 @@ function approximate(
 
     if solver == "lsqr"
         diag_w_sqrt = sqrt(λ) .* sqrt.(w)
-        if a.basis == "per"
+        if (a.basis == "per" || a.basis == "mixed")
             F_vec = LinearMap{ComplexF64}(
                 fhat -> vcat(
                     a.trafo * GroupedCoefficients(a.trafo.setting, fhat),
