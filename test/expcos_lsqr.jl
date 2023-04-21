@@ -8,7 +8,7 @@ max_iter = 50
 bw = [100, 10]
 λs = [0.0, 1.0]
 
-dcos = [false,false,false,false,false,false]
+dcos = ["exp","exp","exp","exp","exp","exp"]
 
 X = rand(d, M)./ 2
 
@@ -18,7 +18,7 @@ y_test = [TestFunctionPeriodic.f(X_test[:, i]) for i = 1:M]
 
 ####  ####
 
-ads = ANOVAapprox.approx(X, complex(y), ds, bw, "expcos", dcos)
+ads = ANOVAapprox.approx(X, complex(y), ds, bw, "mixed", dcos)
 ANOVAapprox.approximate(ads, lambda = λs)
 
 println("AR: ", sum(ANOVAapprox.get_AttributeRanking(ads, 0.0)))
@@ -26,7 +26,7 @@ println("AR: ", sum(ANOVAapprox.get_AttributeRanking(ads, 0.0)))
 
 bw = ANOVAapprox.get_orderDependentBW(TestFunctionPeriodic.AS, [128, 32])
 
-aU = ANOVAapprox.approx(X, complex(y), TestFunctionPeriodic.AS, bw, "expcos", dcos)
+aU = ANOVAapprox.approx(X, complex(y), TestFunctionPeriodic.AS, bw, "mixed", dcos)
 ANOVAapprox.approximate(aU, lambda = λs)
 
 err_L2_ds =
