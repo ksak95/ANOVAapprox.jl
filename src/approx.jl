@@ -146,14 +146,6 @@ function approximate(
         end
     end
 
-    if !isnothing(nodeweights)
-        if (length(nodeweights) != length(a.y))
-            error("The length of the nodeweights Vector doesnt match the Data.")
-        else
-            nw = nodeweights
-        end
-    end
-
     if (a.basis == "per" || a.basis == "mixed")
         what = GroupedCoefficients(a.trafo.setting, complex(w))
     else
