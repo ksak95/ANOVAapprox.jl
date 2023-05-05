@@ -38,7 +38,6 @@ mutable struct approx
     )
         if basis in bases
             M = size(X, 2)
-            ds = maximum([length(u) for u in U])
 
             if !isa(y, vtypes[basis])
                 error(
@@ -110,6 +109,8 @@ function approx(
     N::Vector{Int},
     basis::String = "cos",
     dcos::Vector{String} = Vector{String}([]))
+
+    ds = maximum([length(u) for u in U])
 
     if (length(N) != length(U)) && (length(N) != ds)
         error("N needs to have |U| or max |u| entries.")
