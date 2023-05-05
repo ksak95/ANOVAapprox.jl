@@ -50,6 +50,7 @@ mutable struct approx
             end
 
             for i = 1:length(U)
+                u = U[i]
                 if u != []
                     if length(N[i])!=length(u)
                         error("Vector N has for the set", u, "not the right length")
