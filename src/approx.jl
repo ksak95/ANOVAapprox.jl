@@ -127,7 +127,7 @@ function approx(
         if u == []
             bws[i] = fill(0, length(u))
         else
-            bws[i] = fill(N[i], length(u))
+            bws[i] = fill(bw[i], length(u))
         end
     end
 
