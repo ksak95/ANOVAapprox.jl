@@ -23,7 +23,7 @@ mutable struct approx
     X::Matrix{Float64}
     y::Union{Vector{ComplexF64},Vector{Float64}}
     U::Vector{Vector{Int}}
-    N::Vector{Int}
+    N::Vector{Vector{Int}}
     trafo::GroupedTransform
     fc::Dict{Float64,GroupedCoefficients}
     dcos::Vector{String}
@@ -32,7 +32,7 @@ mutable struct approx
         X::Matrix{Float64},
         y::Union{Vector{ComplexF64},Vector{Float64}},
         U::Vector{Vector{Int}},
-        N::Vector{Int},
+        N::Vector{Vector{Int}},
         basis::String = "cos",
         dcos::Vector{String} = Vector{String}([])
     )
@@ -50,14 +50,12 @@ mutable struct approx
                 error("y needs as many entries as X has columns.")
             end
 
-            if (length(N) != length(U)) && (length(N) != ds)
-                error("N needs to have |U| or max |u| entries.")
-            end
-
-            if length(N) == ds
-                bw = get_orderDependentBW(U, N)
-            else
-                bw = N
+            for i = 1:length(U)
+                if u != []
+                    if length(N[i])!=length(u)
+                        error("Vector N has for the set", u, "not the right length")
+                    end
+                end
             end
 
             if basis == "mixed"
@@ -97,12 +95,42 @@ mutable struct approx
                 Xt ./= 4
             end
 
-            trafo = GroupedTransform(gt_systems[basis], U, bw, Xt, dcos)
-            return new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}(), dcos)
+            trafo = GroupedTransform(gt_systems[basis], U, N, Xt, dcos)
+            return new(basis, X, y, U, N, trafo, Dict{Float64,GroupedCoefficients}(), dcos)
         else
             error("Basis not found.")
         end
     end
+end
+
+function approx(
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+    U::Vector{Vector{Int}},
+    N::Vector{Int},
+    basis::String = "cos",
+    dcos::Vector{String} = Vector{String}([]))
+
+    if (length(N) != length(U)) && (length(N) != ds)
+        error("N needs to have |U| or max |u| entries.")
+    end
+
+    if length(N) == ds
+        bw = get_orderDependentBW(U, N)
+    else
+        bw = N
+    end
+    bws = Vector{Vector{Int}}(undef, length(U))
+    for i = 1:length(U)
+        u = U[i]
+        if u == []
+            bws[i] = fill(0, length(u))
+        else
+            bws[i] = fill(N[i], length(u))
+        end
+    end
+
+    return approx(X, y, U, bws, basis, dcos)
 end
 
 function approx(
