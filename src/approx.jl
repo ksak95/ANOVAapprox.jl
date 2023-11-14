@@ -134,7 +134,9 @@ function approximate(
         end
     end
 
-    if a.basis == "per"
+   println("Heeeey checkmeout im just KEN") 
+   
+   if a.basis == "per"
         what = GroupedCoefficients(a.trafo.setting, complex(w))
     else
         what = GroupedCoefficients(a.trafo.setting, w)

@@ -1,5 +1,10 @@
 #### PERIODIC TEST SOLVER LSQR ####
 
+using ANOVAapprox
+using Test
+
+include("TestFunctionPeriodic.jl")
+
 d = 6
 ds = 2
 M = 10_000
@@ -7,9 +12,9 @@ max_iter = 50
 bw = [100, 10]
 λs = [0.0, 1.0]
 
-X = rand(rng, d, M) .- 0.5
+X = rand(d, M) .- 0.5
 y = [TestFunctionPeriodic.f(X[:, i]) for i = 1:M]
-X_test = rand(rng, d, M) .- 0.5
+X_test = rand(d, M) .- 0.5
 y_test = [TestFunctionPeriodic.f(X_test[:, i]) for i = 1:M]
 
 ####  ####
@@ -48,3 +53,4 @@ println("l2 rand U: ", err_l2_rand_U)
 @test err_l2_U < 0.005
 @test err_l2_rand_ds < 0.01
 @test err_l2_rand_U < 0.005
+
