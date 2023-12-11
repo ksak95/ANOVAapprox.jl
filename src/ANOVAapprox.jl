@@ -1,7 +1,7 @@
 module ANOVAapprox
 
 using GroupedTransforms,
-    LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions
+ LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions, Optim
 
 bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4", "mixed"]
 types = Dict(
@@ -51,6 +51,72 @@ function get_orderDependentBW(U::Vector{Vector{Int}}, N::Vector{Int})::Vector{In
 
     return N_bw
 end
+
+function bisection(l, r, fun; maxiter = 1_000)
+    lval = fun(l)
+    rval = fun(r)
+
+    sign(lval)*sign(rval) == 1 && error("bisection: root is not between l and r")
+    if lval > 0
+        gun = fun
+        fun = t -> -gun(t)
+    end
+
+    m = 0.0
+    for _ in 1:maxiter
+        m = (l+r)/2
+        mval = fun(m)
+        abs(mval) < 1e-16 && break
+        if mval < 0
+            l = m
+            lval = mval
+        else
+            r = m
+            rval = mval
+        end
+    end
+    return m
+end
+
+
+"""
+    C = fitrate(X, y)
+fits a function of the form
+  ``(C[4] - x)*(C[1] + C[2]*x^C[3])``
+
+# Input
+ - `X::Vector{Float64}`
+ - `y::Vector{Float64}`
+
+# Output
+ - `C::Vector{Float64}`: coefficients of the approximation
+"""
+function fitrate(X, y)
+    # no rate
+    length(unique(y)) == 1 && return [0.0, 0.0, -100.0, length(X)+1]
+    
+    # delete zeros at the end
+    idx = length(y) - findfirst(reverse(y) .!= 0) + 1
+    X = X[1:idx]
+    y = y[1:idx]
+
+    function f(C::Vector)
+        return norm(log.((maximum(X)+exp(C[4]) .- X) .* (exp(C[1]) .+ exp(C[2])*X.^(C[3]))) - log.(y), 1)
+    end
+
+    x0 = [log(y[argmax(X)]), log((y[argmin(X)]-y[argmax(X)])*minimum(X)^3), -3.0, 1]
+    res = optimize(f, x0)
+
+    C = Optim.minimizer(res)
+    C[1] = exp.(C[1])
+    C[2] = exp.(C[2])
+    C[4] = exp(C[4])+maximum(X)
+
+    C[3] >= 0 && return [0.0, 0.0, -100.0, length(X)+1]
+
+    return C
+end
+
 
 include("fista.jl")
 include("approx.jl")
