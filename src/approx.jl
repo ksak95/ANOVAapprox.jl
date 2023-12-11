@@ -452,6 +452,7 @@ function improve_bandwidths(a::approx,
 )::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
     bs = a.N
     U = a.U
+    B=sum(map(x->prod(x),bs))
     basis_vect = a.basis_vect
     if a.basis == "per" || a.basis == "std" || a.basis == "cheb"
         basis_vect = fill("exp",length(U))
