@@ -455,7 +455,7 @@ function improve_bandwidths(a::approx,
     basis_vect = a.basis_vect
     if a.basis == "per" || a.basis == "std" || a.basis == "cheb"
         basis_vect = fill("exp",length(U))
-    else if a.basis == "cos"
+    elseif a.basis == "cos"
         basis_vect = fill("cos",length(U))
     end
 
