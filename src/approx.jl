@@ -446,3 +446,52 @@ function evaluateSHAPterms(
 )::Dict{Float64,Union{Matrix{ComplexF64},Matrix{Float64}}}
     return Dict(λ => evaluateSHAPterms(a, X, λ) for λ in collect(keys(a.fc)))
 end
+
+function improve_bandwidths(a::approx,
+    λ::Float64,
+)::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
+    bs = a.N
+    U = a.U
+    basis_vect = a.basis_vect
+    if a.basis == "per" || a.basis == "std" || a.basis == "cheb"
+        basis_vect = fill("exp",length(U))
+    else if a.basis == "cos"
+        basis_vect = fill("cos",length(U))
+    end
+
+    Une = findall(x->x!=[],U)
+    Sv = Vector{Vector{Vector{Float64}}}(undef,length(U))
+
+    for idx = Une
+        N = bs[idx].-1
+        N = tuple(N...)
+        bas = basis_vect[U[idx]]
+        fc = zeros(tuple((i+1 for i=N)...))
+        fc[CartesianIndices(tuple((1:i for i=N)...))] = abs.(permutedims(reshape(a.fc[λ][U[idx]],reverse(N)),length(U[idx]):-1:1)).^2
+        r = [bas[i]== "exp" ? [((N[i]+1)÷2):-1:1,(N[i]+1)÷2+1:N[i]+1] : [1:N[i]+1] for i=1:lastindex(N)]
+        fc = sum(map(x->fc[CartesianIndices(tuple((r[i][x[i]] for i=1:lastindex(N))...))],getproperty.(CartesianIndex.(findall(x->x==0,zeros((bas[i]== "exp" ? 2 : 1 for i=1:length(U[idx]))...))),:I)))
+        NN = size(fc)
+        Sv[idx] = [[sum(fc[CartesianIndices(tuple([range(k==i ? j : 1,NN[k]) for k=1:lastindex(NN)]...))]) for j=1:NN[i]] for i=1:lastindex(U[idx])]
+    end
+
+    Cv = Vector{Vector{Vector{Float64}}}(undef,length(U))
+    Cv[Une] = [[fitrate(1:length(v),v) for v=V] for V=Sv[Une]]
+
+    del = fill(false,length(U))
+    del[Une] = map(x -> reduce(|,map(y -> y[2]==0,x)),Cv[Une])
+    Une = findall(x->(U[x]!=[] && !del[x]),1:lastindex(U))
+    gun = λ -> sum(map(x -> prod(map(y -> (-y[3]*y[2]/λ)^(-1/y[3]),x))^(1/(1-sum(map(y -> 1/y[3],x)))),Cv[Une]))-B
+
+    λ2 = bisection(-100.0, 100.0, t -> gun(exp.(t))) |> exp
+
+    sIv=Vector{Float64}(undef,length(U))
+    sIv[Une] = map(x -> prod(map(y -> (-y[3]*y[2]/λ2)^(-1/y[3]),x))^(1/(1-sum(map(y -> 1/y[3],x)))),Cv[Une])
+
+    bs[Une] = [[((λ2*sIv[i])/(-v[3]*v[2]))^(1/v[3]) |> x->x/2 |> round |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int for v=Cv[i]] for i=Une]
+
+    del[Une] = del[Une] .| map(x -> reduce(|,map(y -> y==0,x)),bs[Une])
+
+    deleteat!(bs, del)
+    deleteat!(U,  del)
+    return (U,bs)
+end
