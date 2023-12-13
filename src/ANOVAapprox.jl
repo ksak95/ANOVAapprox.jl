@@ -92,7 +92,7 @@ fits a function of the form
 # Output
  - `C::Vector{Float64}`: coefficients of the approximation
 """
-function fitrate(X::Vector{Float64}, y::Vector{Float64}, verbose::Bool = false, )::Vector{Float64}
+function fitrate(X, y::Vector{Float64}, verbose::Bool = false, )::Vector{Float64}
     # no rate
     length(unique(y)) == 1 && return [0.0, 0.0, -100.0, length(X)+1]
     
