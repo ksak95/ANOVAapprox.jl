@@ -447,12 +447,17 @@ function evaluateSHAPterms(
     return Dict(λ => evaluateSHAPterms(a, X, λ) for λ in collect(keys(a.fc)))
 end
 
+@doc raw"""
+    improve_bandwidths(a::approx, λ::Float64, B::Int)::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
+    
+This function finds a new truncation set `U` and assiciated bandwdiths `bs` by using the decay of the approximated Fourier coefficients. It generates the bandwdiths `bs` such that the budget `B` of frequencies is used
+"""
 function improve_bandwidths(a::approx,
     λ::Float64,
+    B::Int,
 )::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
     bs = a.N
     U = a.U
-    B=sum(map(x->prod(x),bs))
     Une = findall(x->x!=[],U)
     Cv = Vector{Vector{Tuple{Float64, Float64}}}(undef,length(U))
     Cv[Une] = approx_decay(a,λ)
@@ -476,6 +481,11 @@ function improve_bandwidths(a::approx,
     return (U,bs)
 end
 
+@doc raw"""
+    approx_decay(a::approx, λ::Float64)::Vector{Vector{Tuple{Float64,Float64}}}
+    
+This function approximates the decay rates of all ANOVA terms. The returned tuples contain the coefficients for the decay C[1]*x^C[2].
+"""
 function approx_decay(a::approx,
     λ::Float64,
 )::Vector{Vector{Tuple{Float64,Float64}}}
@@ -484,10 +494,20 @@ function approx_decay(a::approx,
     return map(x -> approx_decay(a,λ,x), U[Une])
 end
 
+@doc raw"""
+    approx_decay(a::approx, λ::Float64, u::Vector{Int})::Vector{Tuple{Float64,Float64}}
+    
+This function approximates the decay rates of an ANOVA term `u`. The returned tuples contain the coefficients for the decay C[1]*x^C[2].
+"""
 function approx_decay(a::approx,
     λ::Float64,
     u::Vector{Int},
 )::Vector{Tuple{Float64,Float64}}
+
+    if u==[]
+        error("Can't find a decay for the constant term.")
+    end
+
     bs = a.N
     U = a.U
     basis_vect = a.basis_vect
@@ -507,7 +527,7 @@ function approx_decay(a::approx,
     fc = sum(map(x->fc[CartesianIndices(tuple((r[i][x[i]] for i=1:lastindex(N))...))],getproperty.(CartesianIndex.(findall(x->x==0,zeros((bas[i]== "exp" ? 2 : 1 for i=1:length(U[idx]))...))),:I)))
     NN = size(fc)
     S = [[sum(fc[CartesianIndices(tuple([range(k==i ? j : 1,NN[k]) for k=1:lastindex(NN)]...))]) for j=1:NN[i]] for i=1:lastindex(U[idx])]
-    Cv = [fitrate(1:length(v),v) for v=S]
-    return map(y -> (y[2],y[3]), Cv)
+    C = [fitrate(1:length(v),v) for v=S]
+    return map(y -> (y[2],y[3]), C)
 end
 
