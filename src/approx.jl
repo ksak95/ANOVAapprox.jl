@@ -448,19 +448,24 @@ function evaluateSHAPterms(
 end
 
 @doc raw"""
-    improve_bandwidths(a::approx, λ::Float64, B::Int)::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
+    improve_bandwidths(a::approx, λ::Float64, B::Int, verbose::Bool = false)::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
     
 This function finds a new truncation set `U` and assiciated bandwdiths `bs` by using the decay of the approximated Fourier coefficients. It generates the bandwdiths `bs` such that the budget `B` of frequencies is used
 """
 function improve_bandwidths(a::approx,
     λ::Float64,
     B::Int,
+    verbose::Bool = false, 
 )::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
     bs = a.N
     U = a.U
     Une = findall(x->x!=[],U)
     Cv = Vector{Vector{Tuple{Float64, Float64}}}(undef,length(U))
-    Cv[Une] = approx_decay(a,λ)
+    Cv[Une] = approx_decay(a,λ,verbose)
+    
+    if verbose
+        println("Rates: ", Cv)
+    end
 
     del = fill(false,length(U))
     del[Une] = map(x -> reduce(|,map(y -> y[1]==0,x)),Cv[Une])
@@ -471,6 +476,10 @@ function improve_bandwidths(a::approx,
 
     sIv=Vector{Float64}(undef,length(U))
     sIv[Une] = map(x -> prod(map(y -> (-y[2]*y[1]/λ2)^(-1/y[2]),x))^(1/(1-sum(map(y -> 1/y[2],x)))),Cv[Une])
+
+    if verbose
+        println("I", sIv)
+    end
 
     bs[Une] = [[((λ2*sIv[i])/(-v[2]*v[1]))^(1/v[2]) |> x->x/2 |> round |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int for v=Cv[i]] for i=Une]
 

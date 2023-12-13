@@ -87,11 +87,12 @@ fits a function of the form
 # Input
  - `X::Vector{Float64}`
  - `y::Vector{Float64}`
+ - `verbose::Bool = false`
 
 # Output
  - `C::Vector{Float64}`: coefficients of the approximation
 """
-function fitrate(X, y)
+function fitrate(X::Vector{Float64}, y::Vector{Float64}, verbose::Bool = false, )::Vector{Float64}
     # no rate
     length(unique(y)) == 1 && return [0.0, 0.0, -100.0, length(X)+1]
     
@@ -105,7 +106,11 @@ function fitrate(X, y)
     end
 
     x0 = [log(y[argmax(X)]), log((y[argmin(X)]-y[argmax(X)])*minimum(X)^3), -3.0, 1]
-    res = optimize(f, x0)
+    if verbose
+        @show res = optimize(f, x0)
+    else
+        res = optimize(f, x0)
+    end
 
     C = Optim.minimizer(res)
     C[1] = exp.(C[1])
