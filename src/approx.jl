@@ -497,10 +497,11 @@ This function approximates the decay rates of all ANOVA terms. The returned tupl
 """
 function approx_decay(a::approx,
     λ::Float64,
+    verbose::Bool = false, 
 )::Vector{Vector{Tuple{Float64,Float64}}}
     U = a.U
     Une = findall(x->x!=[],U)
-    return map(x -> approx_decay(a,λ,x), U[Une])
+    return map(x -> approx_decay(a,λ,x,verbose), U[Une])
 end
 
 @doc raw"""
@@ -511,6 +512,7 @@ This function approximates the decay rates of an ANOVA term `u`. The returned tu
 function approx_decay(a::approx,
     λ::Float64,
     u::Vector{Int},
+    verbose::Bool = false, 
 )::Vector{Tuple{Float64,Float64}}
 
     if u==[]
@@ -536,7 +538,10 @@ function approx_decay(a::approx,
     fc = sum(map(x->fc[CartesianIndices(tuple((r[i][x[i]] for i=1:lastindex(N))...))],getproperty.(CartesianIndex.(findall(x->x==0,zeros((bas[i]== "exp" ? 2 : 1 for i=1:length(U[idx]))...))),:I)))
     NN = size(fc)
     S = [[sum(fc[CartesianIndices(tuple([range(k==i ? j : 1,NN[k]) for k=1:lastindex(NN)]...))]) for j=1:NN[i]] for i=1:lastindex(U[idx])]
-    C = [fitrate(1:length(v),v) for v=S]
+    if verbose
+        println("u: ", u)
+    end
+    C = [fitrate(1:length(v),v,verbose) for v=S]
     return map(y -> (y[2],y[3]), C)
 end
 
