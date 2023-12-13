@@ -453,8 +453,9 @@ function improve_bandwidths(a::approx,
     bs = a.N
     U = a.U
     B=sum(map(x->prod(x),bs))
-    
-    Cv = approx_decay(a,λ)
+    Une = findall(x->x!=[],U)
+    Cv = Vector{Vector{Vector{Float64}}}(undef,length(U))
+    Cv[Une] = approx_decay(a,λ)
 
     del = fill(false,length(U))
     del[Une] = map(x -> reduce(|,map(y -> y[1]==0,x)),Cv[Une])
@@ -504,6 +505,6 @@ function approx_decay(a::approx,
 
     Cv = Vector{Vector{Vector{Float64}}}(undef,length(U))
     Cv[Une] = [[fitrate(1:length(v),v) for v=V] for V=Sv[Une]]
-    return map(x -> map(y -> (y[2],y[3]), x), Cv)
+    return map(x -> map(y -> (y[2],y[3]), x), Cv[Une])
 end
 
