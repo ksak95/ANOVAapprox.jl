@@ -454,7 +454,7 @@ This function finds a new truncation set `U` and assiciated bandwdiths `bs` by u
 """
 function improve_bandwidths(a::approx,
     λ::Float64,
-    B::Int,
+    B::Int;
     verbose::Bool = false, 
 )::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
     bs = a.N
@@ -496,7 +496,7 @@ end
 This function approximates the decay rates of all ANOVA terms. The returned tuples contain the coefficients for the decay C[1]*x^C[2].
 """
 function approx_decay(a::approx,
-    λ::Float64,
+    λ::Float64;
     verbose::Bool = false, 
 )::Vector{Vector{Tuple{Float64,Float64}}}
     U = a.U
@@ -511,7 +511,7 @@ This function approximates the decay rates of an ANOVA term `u`. The returned tu
 """
 function approx_decay(a::approx,
     λ::Float64,
-    u::Vector{Int},
+    u::Vector{Int};
     verbose::Bool = false, 
 )::Vector{Tuple{Float64,Float64}}
 
