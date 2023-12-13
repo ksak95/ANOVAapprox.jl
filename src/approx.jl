@@ -454,7 +454,7 @@ function improve_bandwidths(a::approx,
     U = a.U
     B=sum(map(x->prod(x),bs))
     Une = findall(x->x!=[],U)
-    Cv = Vector{Vector{Vector{Float64}}}(undef,length(U))
+    Cv = Vector{Vector{Tuple{Float64, Float64}}}(undef,length(U))
     Cv[Une] = approx_decay(a,λ)
 
     del = fill(false,length(U))
