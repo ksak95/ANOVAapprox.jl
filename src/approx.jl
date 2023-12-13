@@ -486,7 +486,7 @@ end
 
 function approx_decay(a::approx,
     λ::Float64,
-    u::Vector{Float64},
+    u::Vector{Int},
 )::Vector{Tuple{Float64,Float64}}
     bs = a.N
     U = a.U
