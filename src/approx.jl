@@ -453,6 +453,33 @@ function improve_bandwidths(a::approx,
     bs = a.N
     U = a.U
     B=sum(map(x->prod(x),bs))
+    
+    Cv = approx_decay(a,λ)
+
+    del = fill(false,length(U))
+    del[Une] = map(x -> reduce(|,map(y -> y[1]==0,x)),Cv[Une])
+    Une = findall(x->(U[x]!=[] && !del[x]),1:lastindex(U))
+    gun = λ -> sum(map(x -> prod(map(y -> (-y[2]*y[1]/λ)^(-1/y[2]),x))^(1/(1-sum(map(y -> 1/y[2],x)))),Cv[Une]))-B
+
+    λ2 = bisection(-100.0, 100.0, t -> gun(exp.(t))) |> exp
+
+    sIv=Vector{Float64}(undef,length(U))
+    sIv[Une] = map(x -> prod(map(y -> (-y[2]*y[1]/λ2)^(-1/y[2]),x))^(1/(1-sum(map(y -> 1/y[2],x)))),Cv[Une])
+
+    bs[Une] = [[((λ2*sIv[i])/(-v[2]*v[1]))^(1/v[2]) |> x->x/2 |> round |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int for v=Cv[i]] for i=Une]
+
+    del[Une] = del[Une] .| map(x -> reduce(|,map(y -> y==0,x)),bs[Une])
+
+    deleteat!(bs, del)
+    deleteat!(U,  del)
+    return (U,bs)
+end
+
+function approx_decay(a::approx,
+    λ::Float64,
+)::Vector{Vector{Tuple{Float64,Float64}}}
+    bs = a.N
+    U = a.U
     basis_vect = a.basis_vect
     if a.basis == "per" || a.basis == "std" || a.basis == "cheb"
         basis_vect = fill("exp",length(U))
@@ -477,22 +504,6 @@ function improve_bandwidths(a::approx,
 
     Cv = Vector{Vector{Vector{Float64}}}(undef,length(U))
     Cv[Une] = [[fitrate(1:length(v),v) for v=V] for V=Sv[Une]]
-
-    del = fill(false,length(U))
-    del[Une] = map(x -> reduce(|,map(y -> y[2]==0,x)),Cv[Une])
-    Une = findall(x->(U[x]!=[] && !del[x]),1:lastindex(U))
-    gun = λ -> sum(map(x -> prod(map(y -> (-y[3]*y[2]/λ)^(-1/y[3]),x))^(1/(1-sum(map(y -> 1/y[3],x)))),Cv[Une]))-B
-
-    λ2 = bisection(-100.0, 100.0, t -> gun(exp.(t))) |> exp
-
-    sIv=Vector{Float64}(undef,length(U))
-    sIv[Une] = map(x -> prod(map(y -> (-y[3]*y[2]/λ2)^(-1/y[3]),x))^(1/(1-sum(map(y -> 1/y[3],x)))),Cv[Une])
-
-    bs[Une] = [[((λ2*sIv[i])/(-v[3]*v[2]))^(1/v[3]) |> x->x/2 |> round |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int for v=Cv[i]] for i=Une]
-
-    del[Une] = del[Une] .| map(x -> reduce(|,map(y -> y==0,x)),bs[Une])
-
-    deleteat!(bs, del)
-    deleteat!(U,  del)
-    return (U,bs)
+    return map(x -> map(y -> (y[2],y[3]), x), Cv)
 end
+
