@@ -479,6 +479,15 @@ end
 function approx_decay(a::approx,
     λ::Float64,
 )::Vector{Vector{Tuple{Float64,Float64}}}
+    U = a.U
+    Une = findall(x->x!=[],U)
+    return map(x -> approx_decay(a,λ,x), U[Une])
+end
+
+function approx_decay(a::approx,
+    λ::Float64,
+    u::Vector{Float64},
+)::Vector{Tuple{Float64,Float64}}
     bs = a.N
     U = a.U
     basis_vect = a.basis_vect
@@ -488,23 +497,17 @@ function approx_decay(a::approx,
         basis_vect = fill("cos",length(U))
     end
 
-    Une = findall(x->x!=[],U)
-    Sv = Vector{Vector{Vector{Float64}}}(undef,length(U))
-
-    for idx = Une
-        N = bs[idx].-1
-        N = tuple(N...)
-        bas = basis_vect[U[idx]]
-        fc = zeros(tuple((i+1 for i=N)...))
-        fc[CartesianIndices(tuple((1:i for i=N)...))] = abs.(permutedims(reshape(a.fc[λ][U[idx]],reverse(N)),length(U[idx]):-1:1)).^2
-        r = [bas[i]== "exp" ? [((N[i]+1)÷2):-1:1,(N[i]+1)÷2+1:N[i]+1] : [1:N[i]+1] for i=1:lastindex(N)]
-        fc = sum(map(x->fc[CartesianIndices(tuple((r[i][x[i]] for i=1:lastindex(N))...))],getproperty.(CartesianIndex.(findall(x->x==0,zeros((bas[i]== "exp" ? 2 : 1 for i=1:length(U[idx]))...))),:I)))
-        NN = size(fc)
-        Sv[idx] = [[sum(fc[CartesianIndices(tuple([range(k==i ? j : 1,NN[k]) for k=1:lastindex(NN)]...))]) for j=1:NN[i]] for i=1:lastindex(U[idx])]
-    end
-
-    Cv = Vector{Vector{Vector{Float64}}}(undef,length(U))
-    Cv[Une] = [[fitrate(1:length(v),v) for v=V] for V=Sv[Une]]
-    return map(x -> map(y -> (y[2],y[3]), x), Cv[Une])
+    idx = findall(x->x==u,U)[1]
+    N = bs[idx].-1
+    N = tuple(N...)
+    bas = basis_vect[U[idx]]
+    fc = zeros(tuple((i+1 for i=N)...))
+    fc[CartesianIndices(tuple((1:i for i=N)...))] = abs.(permutedims(reshape(a.fc[λ][U[idx]],reverse(N)),length(U[idx]):-1:1)).^2
+    r = [bas[i]== "exp" ? [((N[i]+1)÷2):-1:1,(N[i]+1)÷2+1:N[i]+1] : [1:N[i]+1] for i=1:lastindex(N)]
+    fc = sum(map(x->fc[CartesianIndices(tuple((r[i][x[i]] for i=1:lastindex(N))...))],getproperty.(CartesianIndex.(findall(x->x==0,zeros((bas[i]== "exp" ? 2 : 1 for i=1:length(U[idx]))...))),:I)))
+    NN = size(fc)
+    S = [[sum(fc[CartesianIndices(tuple([range(k==i ? j : 1,NN[k]) for k=1:lastindex(NN)]...))]) for j=1:NN[i]] for i=1:lastindex(U[idx])]
+    Cv = [fitrate(1:length(v),v) for v=S]
+    return map(y -> (y[2],y[3]), Cv)
 end
 
