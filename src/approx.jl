@@ -461,7 +461,7 @@ function improve_bandwidths(a::approx,
     U = a.U
     Une = findall(x->x!=[],U)
     Cv = Vector{Vector{Tuple{Float64, Float64}}}(undef,length(U))
-    Cv[Une] = approx_decay(a,λ,verbose)
+    Cv[Une] = approx_decay(a,λ,verbose = verbose)
     
     if verbose
         println("Rates: ", Cv)
