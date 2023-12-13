@@ -501,7 +501,7 @@ function approx_decay(a::approx,
 )::Vector{Vector{Tuple{Float64,Float64}}}
     U = a.U
     Une = findall(x->x!=[],U)
-    return map(x -> approx_decay(a,λ,x,verbose), U[Une])
+    return map(x -> approx_decay(a,λ,x,verbose = verbose), U[Une])
 end
 
 @doc raw"""
@@ -541,7 +541,7 @@ function approx_decay(a::approx,
     if verbose
         println("u: ", u)
     end
-    C = [fitrate(1:length(v),v,verbose) for v=S]
+    C = [fitrate(1:length(v),v,verbose = verbose) for v=S]
     return map(y -> (y[2],y[3]), C)
 end
 
