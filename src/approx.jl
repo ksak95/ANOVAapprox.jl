@@ -481,7 +481,7 @@ function improve_bandwidths(a::approx,
         println("I", sIv)
     end
 
-    bs[Une] = [[((λ2*sIv[i])/(-v[2]*v[1]))^(1/v[2]) |> x->x/2 |> round |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int for v=Cv[i]] for i=Une]
+    bs[Une] = [[((λ2*sIv[i])/(-v[2]*v[1]))^(1/v[2]) |> x->x/2 +1 |> ceil |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int for v=Cv[i]] for i=Une]
 
     del[Une] = del[Une] .| map(x -> reduce(|,map(y -> y==0,x)),bs[Une])
 
