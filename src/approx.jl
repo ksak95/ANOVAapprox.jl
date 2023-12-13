@@ -541,7 +541,7 @@ function approx_decay(a::approx,
     if verbose
         println("u: ", u)
     end
-    C = [fitrate(1:length(v),v,verbose) for v=S]
+    C = [fitrate(1.0:length(v),v,verbose) for v=S]
     return map(y -> (y[2],y[3]), C)
 end
 
