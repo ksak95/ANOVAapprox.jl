@@ -457,8 +457,8 @@ function improve_bandwidths(a::approx,
     B::Int;
     verbose::Bool = false, 
 )::Tuple{Vector{Vector{Int}},Vector{Vector{Int}}}
-    bs = a.N
-    U = a.U
+    bs = copy(a.N)
+    U = copy(a.U)
     Une = findall(x->x!=[],U)
     Cv = Vector{Vector{Tuple{Float64, Float64}}}(undef,length(U))
     Cv[Une] = approx_decay(a,λ,verbose = verbose)
