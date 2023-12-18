@@ -519,6 +519,22 @@ function approx_decay(a::approx,
         error("Can't find a decay for the constant term.")
     end
 
+    S = get_fc_decay(a,λ,u)
+    if verbose
+        println("u: ", u)
+    end
+    C = [fitrate(1:length(v),v,verbose = verbose) for v=S]
+    return map(y -> (y[2],y[3]), C)
+end
+
+function get_fc_decay(a::approx,
+    λ::Float64,
+    u::Vector{Int};
+)::Vector{Vector{Float64}}
+    if u==[]
+        error("Can't find a decay for the constant term.")
+    end
+
     bs = a.N
     U = a.U
     basis_vect = a.basis_vect
@@ -537,11 +553,5 @@ function approx_decay(a::approx,
     r = [bas[i]== "exp" ? [((N[i]+1)÷2):-1:1,(N[i]+1)÷2+1:N[i]+1] : [1:N[i]+1] for i=1:lastindex(N)]
     fc = sum(map(x->fc[CartesianIndices(tuple((r[i][x[i]] for i=1:lastindex(N))...))],getproperty.(CartesianIndex.(findall(x->x==0,zeros((bas[i]== "exp" ? 2 : 1 for i=1:length(U[idx]))...))),:I)))
     NN = size(fc)
-    S = [[sum(fc[CartesianIndices(tuple([range(k==i ? j : 1,NN[k]) for k=1:lastindex(NN)]...))]) for j=1:NN[i]] for i=1:lastindex(U[idx])]
-    if verbose
-        println("u: ", u)
-    end
-    C = [fitrate(1:length(v),v,verbose = verbose) for v=S]
-    return map(y -> (y[2],y[3]), C)
+    return [[sum(fc[CartesianIndices(tuple([range(k==i ? j : 1,NN[k]) for k=1:lastindex(NN)]...))]) for j=1:NN[i]] for i=1:lastindex(U[idx])]
 end
-
