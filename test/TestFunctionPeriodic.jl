@@ -81,9 +81,6 @@ AS[10] = [4, 6]
 trans(x::Float64)::Float64 = x < 0 ? 1 + x : x
 
 function f(x::Vector{Float64})::Float64
-    if length(x) != 6
-        error("Argument has to be 6-dimensional")
-    end
 
     if !isempty(x[(x.>0.5).|(x.<-0.5)])
         error("The nodes have to be between -0.5 and 0.5.")

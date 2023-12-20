@@ -86,8 +86,11 @@ mutable struct approx
                 Xt ./= 4
             end
 
+            GC.gc()
             trafo = GroupedTransform(gt_systems[basis], U, bw, Xt)
-            return new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}())
+            new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}())
+            #f(t) = println("Finalizing ANOVA")
+            #finalizer(f, x)
         else
             error("Basis not found.")
         end
