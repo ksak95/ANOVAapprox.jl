@@ -122,6 +122,11 @@ function fitrate(X, y::Vector{Float64}; verbose::Bool = false, )::Vector{Float64
     return C
 end
 
+function testrate(S::Vector{Vector{Float64}},C::Vector{Vector{Float64}},t::Float64)::Vector{Bool}
+    E = [((C[i][4]).-(1:length(S[i]))).*(C[i][1].+C[i][2].*(1:length(S[i])).^(C[i][3])) for i=1:length(C)]
+    return [sum(abs.(E[i].-S[i]))/length(S[i])<t for i=1:length(C)]
+end
+
 
 include("fista.jl")
 include("approx.jl")

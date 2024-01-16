@@ -461,9 +461,12 @@ function improve_bandwidths(a::approx,
     bs = copy(a.N)
     U = copy(a.U)
     Une = findall(x->x!=[],U)
-    Cv = Vector{Vector{Tuple{Float64, Float64}}}(undef,length(U))
-    Cv[Une] = approx_decay(a,λ,verbose = verbose)
+    CJv = Vector{Vector{Tuple{Float64, Float64, Bool}}}(undef,length(U))
+    CJv[Une] = approx_decay(a,λ,verbose = verbose)
     
+    CJmv = Vector{Vector{Tuple{Float64, Float64, Bool, Int}}}(undef,length(U))
+    CJmv[Une] = [[(CJv[i][j][1],CJv[i][j][2],CJv[i][j][3],bs[i][j]) for j = 1:lastindex(bs[i])] for i=Une]
+
     if verbose
         println("Rates: ", Cv)
     end
@@ -471,18 +474,21 @@ function improve_bandwidths(a::approx,
     del = fill(false,length(U))
     del[Une] = map(x -> reduce(|,map(y -> y[1]==0,x)),Cv[Une])
     Une = findall(x->(U[x]!=[] && !del[x]),1:lastindex(U))
-    gun = λ -> sum(map(x -> prod(map(y -> (-y[2]*y[1]/λ)^(-1/y[2]),x))^(1/(1-sum(map(y -> 1/y[2],x)))),Cv[Une]))-B
+    gun = λ -> sum(map(x -> prod(map(y -> y[3] ? (-y[2]*y[1]/λ)^(-1/y[2]) : y[4],x))^(1/(1-sum(map(y -> 1/y[2],x)))),CJmv[Une]))-B
 
     λ2 = bisection(-100.0, 100.0, t -> gun(exp.(t))) |> exp
 
     sIv=Vector{Float64}(undef,length(U))
-    sIv[Une] = map(x -> prod(map(y -> (-y[2]*y[1]/λ2)^(-1/y[2]),x))^(1/(1-sum(map(y -> 1/y[2],x)))),Cv[Une])
+    sIv[Une] = map(x -> prod(map(y -> y[3] ? (-y[2]*y[1]/λ2)^(-1/y[2]) : y[4],x))^(1/(1-sum(map(y -> 1/y[2],x)))),CJmv[Une])
 
     if verbose
         println("I", sIv)
     end
 
-    bs[Une] = [[((λ2*sIv[i])/(-v[2]*v[1]))^(1/v[2]) |> x->x/2+1 |> ceil |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int for v=Cv[i]] for i=Une]
+    bsn = Vector{Vector{Int}}(undef,length(U))
+    bsn[Une] = [[v[3] ? (((λ2*sIv[i])/(-v[2]*v[1]))^(1/v[2]) |> x->x/2+1 |> ceil |> x->2*x |> x->min(x,prevfloat(Float64(typemax(Int)))) |> Int) : v[4] for v=CJmv[i]] for i=Une]
+
+    bs[Une] = bsn[Une]
 
     del[Une] = del[Une] .| map(x -> reduce(|,map(y -> y==0,x)),bs[Une])
 
@@ -499,7 +505,7 @@ This function approximates the decay rates of all ANOVA terms. The returned tupl
 function approx_decay(a::approx,
     λ::Float64;
     verbose::Bool = false, 
-)::Vector{Vector{Tuple{Float64,Float64}}}
+)::Vector{Vector{Tuple{Float64,Float64,Bool}}}
     U = a.U
     Une = findall(x->x!=[],U)
     return map(x -> approx_decay(a,λ,x,verbose = verbose), U[Une])
@@ -514,7 +520,7 @@ function approx_decay(a::approx,
     λ::Float64,
     u::Vector{Int};
     verbose::Bool = false, 
-)::Vector{Tuple{Float64,Float64}}
+)::Vector{Tuple{Float64,Float64,Bool}}
 
     if u==[]
         error("Can't find a decay for the constant term.")
@@ -525,7 +531,8 @@ function approx_decay(a::approx,
         println("u: ", u)
     end
     C = [fitrate(1:length(v),v,verbose = verbose) for v=S]
-    return map(y -> (y[2],y[3]), C)
+    T = testrate(S,C,1.0)
+    return [(C[i][2],C[i][3],T[i]) for i=1:lastindex(C)]
 end
 
 function get_fc_decay(a::approx,
