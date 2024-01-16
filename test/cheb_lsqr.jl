@@ -1,5 +1,4 @@
 #### NONPERIODIC TEST SOLVER LSQR ####
-using Test
 
 d = 8
 ds = 2
