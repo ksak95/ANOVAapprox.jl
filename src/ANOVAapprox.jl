@@ -78,56 +78,6 @@ function bisection(l, r, fun; maxiter = 1_000)
     return m
 end
 
-
-"""
-    C = fitrate(X, y)
-fits a function of the form
-  ``(C[4] - x)*(C[1] + C[2]*x^C[3])``
-
-# Input
- - `X::Vector{Float64}`
- - `y::Vector{Float64}`
- - `verbose::Bool = false`
-
-# Output
- - `C::Vector{Float64}`: coefficients of the approximation
-"""
-function fitrate(X, y::Vector{Float64}; verbose::Bool = false, )::Vector{Float64}
-    # no rate
-    length(unique(y)) == 1 && return [0.0, 0.0, -100.0, length(X)+1]
-    
-    # delete zeros at the end
-    idx = length(y) - findfirst(reverse(y) .!= 0) + 1
-    X = X[1:idx]
-    y = y[1:idx]
-
-    function f(C::Vector)
-        return norm(log.((maximum(X)+exp(C[4]) .- X) .* (exp(C[1]) .+ exp(C[2])*X.^(C[3]))) - log.(y), 1)
-    end
-
-    x0 = [log(y[argmax(X)]), log((y[argmin(X)]-y[argmax(X)])*minimum(X)^3), -3.0, 1]
-    if verbose
-        @show res = optimize(f, x0)
-    else
-        res = optimize(f, x0)
-    end
-
-    C = Optim.minimizer(res)
-    C[1] = exp.(C[1])
-    C[2] = exp.(C[2])
-    C[4] = exp(C[4])+maximum(X)
-
-    C[3] >= 0 && return [0.0, 0.0, -100.0, length(X)+1]
-
-    return C
-end
-
-function testrate(S::Vector{Vector{Float64}},C::Vector{Vector{Float64}},t::Float64)::Vector{Bool}
-    E = [((C[i][4]).-(1:length(S[i]))).*(C[i][1].+C[i][2].*(1:length(S[i])).^(C[i][3])) for i=1:length(C)]
-    return [sum(abs.(E[i].-S[i]))/length(S[i])<t for i=1:length(C)]
-end
-
-
 include("fista.jl")
 include("approx.jl")
 include("errors.jl")
