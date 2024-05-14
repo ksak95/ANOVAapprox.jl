@@ -26,6 +26,7 @@ mutable struct approx
     N::Vector{Int}
     trafo::GroupedTransform
     fc::Dict{Float64,GroupedCoefficients}
+    classification::Bool
 
     function approx(
         X::Matrix{Float64},
@@ -33,6 +34,7 @@ mutable struct approx
         U::Vector{Vector{Int}},
         N::Vector{Int},
         basis::String = "cos",
+        classification::Bool = false
     )
         if basis in bases
             M = size(X, 2)
@@ -88,7 +90,7 @@ mutable struct approx
 
             GC.gc()
             trafo = GroupedTransform(gt_systems[basis], U, bw, Xt)
-            new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}())
+            new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}(),classification)
             #f(t) = println("Finalizing ANOVA")
             #finalizer(f, x)
         else
@@ -103,9 +105,10 @@ function approx(
     ds::Int,
     N::Vector{Int},
     basis::String = "cos",
+    classification::Bool = false
 )
     Uds = get_superposition_set(size(X, 1), ds)
-    return approx(X, y, Uds, N, basis)
+    return approx(X, y, Uds, N, basis,classification)
 end
 
 
@@ -150,6 +153,10 @@ function approximate(
     if length(λs) != 0
         idx = argmin(λs .- λ)
         tmp = copy(a.fc[λs[idx]].data)
+    end
+
+    if a.classification
+        solver = "fista"
     end
 
     if solver == "lsqr"
@@ -197,7 +204,7 @@ function approximate(
         end
     elseif solver == "fista"
         ghat = GroupedCoefficients(a.trafo.setting, tmp)
-        fista!(ghat, a.trafo, a.y, λ, what, max_iter = max_iter)
+        fista!(ghat, a.trafo, a.y, λ, what, max_iter = max_iter, a.classification)
         a.fc[λ] = ghat
     else
         error("Solver not found.")
