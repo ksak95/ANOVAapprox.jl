@@ -183,7 +183,7 @@ function get_acc(
     λ::Float64,
 )::Float64
     y_eval = evaluate(a, X, λ)
-    return mean(y_eval .== a.y) * 100.00
+    return mean(y_eval .== y) * 100.00
 end
 
 function get_acc(a::approx)::Dict{Float64,Float64}
