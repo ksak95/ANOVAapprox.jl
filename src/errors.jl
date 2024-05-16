@@ -207,5 +207,5 @@ function get_svn(a::approx, λ::Float64)::Float64
 end
 
 function get_svn(a::approx)::Dict{Float64,Float64}
-    return Dict(λ => get_acc(a, λ) for λ in collect(keys(a.fc)))
+    return Dict(λ => get_svn(a, λ) for λ in collect(keys(a.fc)))
 end
