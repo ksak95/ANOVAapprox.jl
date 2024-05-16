@@ -155,9 +155,9 @@ function approximate(
         tmp = copy(a.fc[λs[idx]].data)
     end
 
-    if a.classification
-        solver = "fista"
-    end
+    #if a.classification
+    #    solver = "fista"
+    #end
 
     if solver == "lsqr"
         diag_w_sqrt = sqrt(λ) .* sqrt.(w)
