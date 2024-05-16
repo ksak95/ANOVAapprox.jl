@@ -89,7 +89,11 @@ mutable struct approx
             end
 
             GC.gc()
-            trafo = GroupedTransform(gt_systems[basis], U, bw, Xt)
+            if classification
+                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt, fastmult = false)
+            else
+                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt)
+            end
             new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}(),classification)
             #f(t) = println("Finalizing ANOVA")
             #finalizer(f, x)
