@@ -158,7 +158,7 @@ function fista!(
                     if L * hhat[k] - fgrad[k] > λ
                         ghat[k] = hhat[k] - 1/L * fgrad[k] - 1/L * λ
                     #fhat < 0:
-                    elseif ∇f[k] - L * hhat[k] > λ
+                    elseif fgrad[k] - L * hhat[k] > λ
                         ghat[k] = hhat[k] - 1/L * fgrad[k] + 1/L * λ
                     else 
                         ghat[k] = 0.0
