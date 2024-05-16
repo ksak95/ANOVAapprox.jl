@@ -204,7 +204,7 @@ function approximate(
         end
     elseif solver == "fista"
         ghat = GroupedCoefficients(a.trafo.setting, tmp)
-        fista!(ghat, a.trafo, a.y, λ, what, max_iter = max_iter, a.classification)
+        fista!(ghat, a.trafo, a.y, λ, what; max_iter = max_iter, a.classification)
         a.fc[λ] = ghat
     else
         error("Solver not found.")
