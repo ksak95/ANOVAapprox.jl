@@ -269,7 +269,12 @@ function evaluate(
     end
 
     trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt)
-    return trafo * a.fc[λ]
+    
+    if a.classification
+        return sign.(trafo * a.fc[λ])
+    else
+        return trafo * a.fc[λ]
+    end
 end
 
 @doc raw"""
