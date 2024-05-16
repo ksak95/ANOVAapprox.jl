@@ -283,7 +283,12 @@ end
 This function evaluates the approximation on the nodes `a.X` for the regularization parameter `λ`.
 """
 function evaluate(a::approx, λ::Float64)::Union{Vector{ComplexF64},Vector{Float64}}
-    return a.trafo * a.fc[λ]
+    #return a.trafo * a.fc[λ]
+    if a.classification
+        return sign.(a.trafo * a.fc[λ])
+    else
+        return a.trafo * a.fc[λ]
+    end
 end
 
 @doc raw"""
