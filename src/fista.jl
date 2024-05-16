@@ -145,7 +145,7 @@ function fista!(
         t_old = t
 
         if classification
-            fgrad = F' * (1 / length(y)* y .* (∇loss2_function.(y .* (F * ghat)))) #TODO: ghat or hhat
+            fgrad = F' * (1 / length(y)* y .* (∇loss2_function.(y .* (F * hhat)))) #TODO: ghat or hhat
         else
             Fhhat = F * hhat
             fgrad = (F' * (Fhhat - y))
@@ -193,7 +193,7 @@ function fista!(
 
             # F
             if classification
-                Fvalue = (1 / length(y)) * sum(loss2_function.(y .* (F * fhat))) + λ * sum(abs.(fhat.data))
+                Fvalue = (1 / length(y)) * sum(loss2_function.(y .* (F * ghat))) + λ * sum(abs.(ghat.data))
             else
                 Fvalue = norm((F * ghat) - y)^2 / 2 + λ * sum(norms(ghat, what))
             end
@@ -203,7 +203,7 @@ function fista!(
                 Q = ( 
                 (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) + 
                 dot(vec(ghat - hhat), vec(fgrad)) +
-               L / 2 * norm(vec(ghat - hhat))^2 +
+                L / 2 * norm(vec(ghat - hhat))^2 +
                 λ * sum(abs.(vec(ghat)))
                 )
             else
