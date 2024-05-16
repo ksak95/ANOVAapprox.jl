@@ -1,7 +1,7 @@
 module ANOVAapprox
 
 using GroupedTransforms,
-    LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions, StatsBase
+    LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions, Statistics
 
 bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4"]
 types = Dict(
