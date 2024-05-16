@@ -242,7 +242,7 @@ This function evaluates the approximation on the nodes `X` for the regularizatio
 function evaluate(
     a::approx,
     X::Matrix{Float64},
-    λ::Float64,
+    λ::Float64
 )::Union{Vector{ComplexF64},Vector{Float64}}
     basis = a.basis
 
