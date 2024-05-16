@@ -203,7 +203,7 @@ end
 function get_svn(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
     #return mean(y_eval .== a.y) * 100.00
-    return count((f.y .* y_eval) .< 1.0)
+    return count((a.y .* y_eval) .< 1.0)
 end
 
 function get_svn(a::approx)::Dict{Float64,Float64}
