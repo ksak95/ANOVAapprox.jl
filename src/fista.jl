@@ -145,7 +145,7 @@ function fista!(
         t_old = t
 
         if classification
-            fgrad = F' * (1 / length(y)* y .* (∇loss2_function.(y .* (F * hhat)))) #TODO: ghat or hhat
+            fgrad = F' * (1 / length(y)* y .* (∇loss2_function.(y .* (F * ghat)))) #TODO: ghat or hhat
         else
             Fhhat = F * hhat
             fgrad = (F' * (Fhhat - y))
