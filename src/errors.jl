@@ -185,7 +185,7 @@ function get_acc(
 )::Float64
     y_eval = evaluate(a, X, λ)
     #return mean(y_eval .== y) * 100.00
-    return count(sign.(y_eval) .== a.y)/100
+    return count(sign.(y_eval) .== y)/100
 end
 
 function get_acc(a::approx)::Dict{Float64,Float64}
@@ -198,4 +198,14 @@ function get_acc(
     y::Union{Vector{ComplexF64},Vector{Float64}},
 )::Dict{Float64,Float64}
     return Dict(λ => get_acc(a, X, y, λ) for λ in collect(keys(a.fc)))
+end
+
+function get_svn(a::approx, λ::Float64)::Float64
+    y_eval = evaluate(a, λ)
+    #return mean(y_eval .== a.y) * 100.00
+    return count((f.y .* y_eval) .< 1.0)
+end
+
+function get_svn(a::approx)::Dict{Float64,Float64}
+    return Dict(λ => get_acc(a, λ) for λ in collect(keys(a.fc)))
 end
