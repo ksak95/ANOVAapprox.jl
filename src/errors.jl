@@ -209,3 +209,37 @@ end
 function get_svn(a::approx)::Dict{Float64,Float64}
     return Dict(λ => get_svn(a, λ) for λ in collect(keys(a.fc)))
 end
+
+
+function get_acc(a::approx, λ::Float64)::Float64
+    y_eval = evaluate(a, λ)
+    #return mean(y_eval .== a.y) * 100.00
+    return count(sign.(y_eval) .== a.y)/length(y)*100.00
+end
+
+function get_auc(
+    a::approx,
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+    λ::Float64,
+)::Float64
+    y_eval = evaluate(a, X, λ)
+    dtx = fit(UnitRangeTransform, y_eval)
+    y_norm = StatsBase.transform(dtx, y_eval)
+    y[y .== -1.0] .= 0
+    y[y .== 1.0] .= 1
+    y = Vector{Int64}(y)
+    return auc(y_norm, y)
+end
+
+function get_auc(a::approx)::Dict{Float64,Float64}
+    return Dict(λ => get_auc(a, λ) for λ in collect(keys(a.fc)))
+end
+
+function get_auc(
+    a::approx,
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+)::Dict{Float64,Float64}
+    return Dict(λ => get_auc(a, X, y, λ) for λ in collect(keys(a.fc)))
+end
