@@ -90,7 +90,7 @@ mutable struct approx
 
             GC.gc()
             if classification
-                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt, fastmult = false)
+                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt; fastmult = false)
             else
                 trafo = GroupedTransform(gt_systems[basis], U, bw, Xt)
             end
@@ -112,7 +112,7 @@ function approx(
     classification::Bool = false
 )
     Uds = get_superposition_set(size(X, 1), ds)
-    return approx(X, y, Uds, N, basis,classification)
+    return approx(X, y, Uds, N, basis, classification)
 end
 
 
