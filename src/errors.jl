@@ -223,8 +223,10 @@ function get_auc(
 )::Float64
     y_eval = evaluate(a, X, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
+    y[y .== -1.0] .= 0
+    y[y .== 1.0] .= 1
     y = Vector{Int64}(y)
-    return auc(y_sc, y)
+    return MultivariateAnomalies.auc(y_sc, y)
 end
 
 function get_auc(a::approx)::Dict{Float64,Float64}
