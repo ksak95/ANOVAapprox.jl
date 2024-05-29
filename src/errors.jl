@@ -222,12 +222,9 @@ function get_auc(
     λ::Float64,
 )::Float64
     y_eval = evaluate(a, X, λ)
-    dtx = fit(UnitRangeTransform, y_eval)
-    y_norm = StatsBase.transform(dtx, y_eval)
-    y[y .== -1.0] .= 0
-    y[y .== 1.0] .= 1
+    y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
     y = Vector{Int64}(y)
-    return auc(y_norm, y)
+    return auc(y_sc, y)
 end
 
 function get_auc(a::approx)::Dict{Float64,Float64}
