@@ -173,7 +173,7 @@ end
 
 function get_acc(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
-    return count(sign.(y_eval) .== a.y)/length(y)*100.00
+    return count(sign.(y_eval) .== a.y)/length(a.y)*100.00
 end
 
 function get_acc(
@@ -211,6 +211,7 @@ end
 function get_auc(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
+    y = a.y
     y[y .== -1.0] .= 0
     y[y .== 1.0] .= 1
     y_int = Vector{Int64}(y)
