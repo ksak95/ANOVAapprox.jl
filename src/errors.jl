@@ -208,7 +208,7 @@ function get_svn(a::approx)::Dict{Float64,Float64}
 end
 =#
 
-function get_acc(a::approx, λ::Float64)::Float64
+function get_auc(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
     y[y .== -1.0] .= 0
