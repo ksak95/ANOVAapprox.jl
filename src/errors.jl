@@ -197,7 +197,7 @@ function get_acc(
 )::Dict{Float64,Float64}
     return Dict(λ => get_acc(a, X, y, λ) for λ in collect(keys(a.fc)))
 end
-
+#=
 function get_svn(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
     return count((a.y .* y_eval) .< 1.0)
@@ -206,11 +206,15 @@ end
 function get_svn(a::approx)::Dict{Float64,Float64}
     return Dict(λ => get_svn(a, λ) for λ in collect(keys(a.fc)))
 end
-
+=#
 
 function get_acc(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
-    return count(sign.(y_eval) .== a.y)/length(y)*100.00
+    y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
+    y[y .== -1.0] .= 0
+    y[y .== 1.0] .= 1
+    y_int = Vector{Int64}(y)
+    return MultivariateAnomalies.auc(y_sc, y_int)
 end
 
 function get_auc(
