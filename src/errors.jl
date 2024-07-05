@@ -168,3 +168,78 @@ This function computes the relative ``L_2`` error of the function given the norm
 function get_L2error(a::approx, norm::Float64, bc_fun::Function)::Dict{Float64,Float64}
     return Dict(λ => get_L2error(a, norm, bc_fun, λ) for λ in collect(keys(a.fc)))
 end
+
+################
+
+function get_acc(a::approx, λ::Float64)::Float64
+    y_eval = evaluate(a, λ)
+    return count(sign.(y_eval) .== a.y)/length(a.y)*100.00
+end
+
+function get_acc(
+    a::approx,
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+    λ::Float64,
+)::Float64
+    y_eval = evaluate(a, X, λ)
+    return count(sign.(y_eval) .== y)/length(y)*100.0
+end
+
+function get_acc(a::approx)::Dict{Float64,Float64}
+    return Dict(λ => get_acc(a, λ) for λ in collect(keys(a.fc)))
+end
+
+function get_acc(
+    a::approx,
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+)::Dict{Float64,Float64}
+    return Dict(λ => get_acc(a, X, y, λ) for λ in collect(keys(a.fc)))
+end
+#=
+function get_svn(a::approx, λ::Float64)::Float64
+    y_eval = evaluate(a, λ)
+    return count((a.y .* y_eval) .< 1.0)
+end
+
+function get_svn(a::approx)::Dict{Float64,Float64}
+    return Dict(λ => get_svn(a, λ) for λ in collect(keys(a.fc)))
+end
+=#
+
+function get_auc(a::approx, λ::Float64)::Float64
+    y_eval = evaluate(a, λ)
+    y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
+    y = a.y
+    y[y .== -1.0] .= 0
+    y[y .== 1.0] .= 1
+    y_int = Vector{Int64}(y)
+    return MultivariateAnomalies.auc(y_sc, y_int)
+end
+
+function get_auc(
+    a::approx,
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+    λ::Float64,
+)::Float64
+    y_eval = evaluate(a, X, λ)
+    y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
+    y[y .== -1.0] .= 0
+    y[y .== 1.0] .= 1
+    y_int = Vector{Int64}(y)
+    return MultivariateAnomalies.auc(y_sc, y_int)
+end
+
+function get_auc(a::approx)::Dict{Float64,Float64}
+    return Dict(λ => get_auc(a, λ) for λ in collect(keys(a.fc)))
+end
+
+function get_auc(
+    a::approx,
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+)::Dict{Float64,Float64}
+    return Dict(λ => get_auc(a, X, y, λ) for λ in collect(keys(a.fc)))
+end

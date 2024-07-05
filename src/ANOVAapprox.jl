@@ -1,7 +1,7 @@
 module ANOVAapprox
 
 using GroupedTransforms,
-    LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions
+    LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions, Statistics, MultivariateAnomalies
 
 bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4"]
 types = Dict(
@@ -55,3 +55,4 @@ include("errors.jl")
 include("analysis.jl")
 
 end # module
+#bla
