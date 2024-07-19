@@ -224,6 +224,7 @@ function get_auc(
 )::Float64
     y_eval = evaluate(a, X, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
+    y_=y
     y_[y .== -1.0] .= 0
     y_[y .== 1.0] .= 1
     y_int = Vector{Int64}(y_)
