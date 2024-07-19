@@ -209,7 +209,7 @@ end
 function get_auc(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
-    y_ = a.y
+    y_ = copy(a.y)
     y_[y_ .== -1.0] .= 0
     y_[y_ .== 1.0] .= 1
     y_int = Vector{Int64}(y_)
@@ -224,7 +224,7 @@ function get_auc(
 )::Float64
     y_eval = evaluate(a, X, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
-    y_=y
+    y_=copy(y)
     y_[y .== -1.0] .= 0
     y_[y .== 1.0] .= 1
     y_int = Vector{Int64}(y_)
