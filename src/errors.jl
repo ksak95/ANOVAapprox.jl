@@ -172,8 +172,7 @@ end
 ################
 
 function get_acc(a::approx, λ::Float64)::Float64
-    y_eval = evaluate(a, λ)
-    return count(sign.(y_eval) .== a.y)/length(a.y)*100.00
+    return count(sign.(evaluate(a, λ)) .== a.y)/length(a.y)*100.00
 end
 
 function get_acc(
@@ -182,8 +181,7 @@ function get_acc(
     y::Union{Vector{ComplexF64},Vector{Float64}},
     λ::Float64,
 )::Float64
-    y_eval = evaluate(a, X, λ)
-    return count(sign.(y_eval) .== y)/length(y)*100.0
+    return count(sign.(evaluate(a, X, λ)) .== y)/length(y)*100.0
 end
 
 function get_acc(a::approx)::Dict{Float64,Float64}
