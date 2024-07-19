@@ -224,9 +224,9 @@ function get_auc(
 )::Float64
     y_eval = evaluate(a, X, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
-    y[y .== -1.0] .= 0
-    y[y .== 1.0] .= 1
-    y_int = Vector{Int64}(y)
+    y_[y .== -1.0] .= 0
+    y_[y .== 1.0] .= 1
+    y_int = Vector{Int64}(y_)
     return MultivariateAnomalies.auc(y_sc, y_int)
 end
 
