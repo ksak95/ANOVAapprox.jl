@@ -206,7 +206,7 @@ function get_svn(a::approx)::Dict{Float64,Float64}
 end
 =#
 
-#get AUC error
+#get AUC error  
 
 function get_auc(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
