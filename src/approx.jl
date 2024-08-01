@@ -176,7 +176,7 @@ function approximate(
     max_iter::Int = 50,
     weights::Union{Vector{Float64},Nothing} = nothing,
     verbose::Bool = false,
-    solver::String = classification ? "fista" : "lsqr",
+    solver::String = a.classification ? "fista" : "lsqr",
     tol::Float64 = 1e-8,
 )::Nothing
     M = size(a.X, 2)
