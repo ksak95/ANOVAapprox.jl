@@ -1,6 +1,4 @@
-using Distributed
-addprocs(3)
-@everywhere using ANOVAapprox
+using ANOVAapprox
 using Test
 using Random
 using Aqua

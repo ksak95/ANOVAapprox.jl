@@ -26,15 +26,19 @@ mutable struct approx
     N::Vector{Vector{Int}}
     trafo::GroupedTransform
     fc::Dict{Float64,GroupedCoefficients}
+    classification::Bool
     basis_vect::Vector{String}
+    fastmult::Bool
 
     function approx(
         X::Matrix{Float64},
         y::Union{Vector{ComplexF64},Vector{Float64}},
         U::Vector{Vector{Int}},
         N::Vector{Vector{Int}},
-        basis::String = "cos",
-        basis_vect::Vector{String} = Vector{String}([])
+        basis::String = "cos";
+        classification::Bool = false,
+        basis_vect::Vector{String} = Vector{String}([]),
+        fastmult::Bool = classification ? true : false,
     )
         if basis in bases
             M = size(X, 2)
@@ -96,8 +100,14 @@ mutable struct approx
             end
 
             GC.gc()
-            trafo = GroupedTransform(gt_systems[basis], U, N, Xt, basis_vect)
-            new(basis, X, y, U, N, trafo, Dict{Float64,GroupedCoefficients}(), basis_vect)
+            if classification
+                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt; fastmult = fastmult, basis_vect = basis_vect)
+            else
+                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt; fastmult = fastmult, basis_vect = basis_vect)
+            end
+            new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}(),classification,basis_vect)
+            #f(t) = println("Finalizing ANOVA")
+            #finalizer(f, x)
         else
             error("Basis not found.")
         end
@@ -105,12 +115,15 @@ mutable struct approx
 end
 
 function approx(
-    X::Matrix{Float64},
-    y::Union{Vector{ComplexF64},Vector{Float64}},
-    U::Vector{Vector{Int}},
-    N::Vector{Int},
-    basis::String = "cos",
-    basis_vect::Vector{String} = Vector{String}([]))
+        X::Matrix{Float64},
+        y::Union{Vector{ComplexF64},Vector{Float64}},
+        U::Vector{Vector{Int}},
+        N::Vector{Int},
+        basis::String = "cos";
+        classification::Bool = false,
+        basis_vect::Vector{String} = Vector{String}([]),
+        fastmult::Bool = classification ? true : false,
+    )
 
     ds = maximum([length(u) for u in U])
 
@@ -133,7 +146,7 @@ function approx(
         end
     end
 
-    return approx(X, y, U, bws, basis, basis_vect)
+    return approx(X, y, U, bws, basis; classification = classification, basis_vect = basis_vect, fastmult = fastmult)
 end
 
 function approx(
@@ -141,11 +154,13 @@ function approx(
     y::Union{Vector{ComplexF64},Vector{Float64}},
     ds::Int,
     N::Vector{Int},
-    basis::String = "cos",
+    basis::String = "cos";
+    classification::Bool = false,
     basis_vect::Vector{String} = Vector{String}([]),
+    fastmult::Bool = classification ? true : false,
 )
     Uds = get_superposition_set(size(X, 1), ds)
-    return approx(X, y, Uds, N, basis, basis_vect)
+    return approx(X, y, Uds, N, basis; classification = classification, basis_vect = basis_vect, fastmult = fastmult)
 end
 
 
@@ -161,7 +176,7 @@ function approximate(
     max_iter::Int = 50,
     weights::Union{Vector{Float64},Nothing} = nothing,
     verbose::Bool = false,
-    solver::String = "lsqr",
+    solver::String = classification ? "fista" : "lsqr",
     tol::Float64 = 1e-8,
 )::Nothing
     M = size(a.X, 2)
@@ -189,6 +204,10 @@ function approximate(
     if length(λs) != 0
         idx = argmin(λs .- λ)
         tmp = copy(a.fc[λs[idx]].data)
+    end
+
+    if a.classification && solver != "fista"
+        error("Classification is only implemented with the fista solver.")
     end
 
     if solver == "lsqr"
@@ -236,7 +255,7 @@ function approximate(
         end
     elseif solver == "fista"
         ghat = GroupedCoefficients(a.trafo.setting, tmp)
-        fista!(ghat, a.trafo, a.y, λ, what, max_iter = max_iter)
+        fista!(ghat, a.trafo, a.y, λ, what; max_iter = max_iter, a.classification)
         a.fc[λ] = ghat
     else
         error("Solver not found.")
@@ -270,7 +289,7 @@ This function evaluates the approximation on the nodes `X` for the regularizatio
 function evaluate(
     a::approx,
     X::Matrix{Float64},
-    λ::Float64,
+    λ::Float64
 )::Union{Vector{ComplexF64},Vector{Float64}}
     basis = a.basis
 
@@ -298,6 +317,7 @@ function evaluate(
 
     trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt, a.basis_vect)
     return trafo * a.fc[λ]
+
 end
 
 @doc raw"""
@@ -307,6 +327,7 @@ This function evaluates the approximation on the nodes `a.X` for the regularizat
 """
 function evaluate(a::approx, λ::Float64)::Union{Vector{ComplexF64},Vector{Float64}}
     return a.trafo * a.fc[λ]
+    
 end
 
 @doc raw"""
