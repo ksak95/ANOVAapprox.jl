@@ -168,7 +168,8 @@ function fista!(
                 set_data!(ghat, vec(hhat - 1 / L * fgrad))
 
                 mask = map(u -> (λ / L)^2 < sum(abs.(ghat[u] .^ 2 ./ what[u])), U)
-                ξs = pmap(u -> λ2ξ(λ / L, what[u], ghat[u]), U[mask])
+                ξs = map(fetch, map(u -> @spawn(λ2ξ(λ / L, what[u], ghat[u])), U[mask]))
+                #ξs = pmap(u -> λ2ξ(λ / L, what[u], ghat[u]), U[mask])
                 for u in U[.!mask]
                     ghat[u] = 0 * ghat[u]
                 end
