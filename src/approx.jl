@@ -426,7 +426,7 @@ function evaluateANOVAterms(
 
     for j = 1:length(a.U)
         u = a.U[j]
-        values[:,j] = trafo[u] * a.fc[λ][u]
+        values[:, j] = trafo[u] * a.fc[λ][u]
     end
 
     return values
