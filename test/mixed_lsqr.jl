@@ -8,12 +8,12 @@ max_iter = 50
 bw = [100, 10]
 λs = [0.0, 1.0]
 
-basis_vect = ["exp","exp","exp","exp","exp","exp"]
+basis_vect = ["exp", "exp", "exp", "exp", "exp", "exp"]
 
-X = rand(d, M)./ 2
+X = rand(d, M) ./ 2
 
 y = [TestFunctionPeriodic.f(X[:, i]) for i = 1:M]
-X_test = rand(d, M)./ 2
+X_test = rand(d, M) ./ 2
 y_test = [TestFunctionPeriodic.f(X_test[:, i]) for i = 1:M]
 
 ####  ####
