@@ -1,7 +1,13 @@
 module ANOVAapprox
 
-using GroupedTransforms,
-    LinearAlgebra, IterativeSolvers, LinearMaps, SpecialFunctions, Statistics, MultivariateAnomalies, Base.Threads
+using GroupedTransforms
+using LinearAlgebra
+using IterativeSolvers
+using LinearMaps
+using SpecialFunctions
+using Statistics
+using MultivariateAnomalies
+using Base.Threads
 
 bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4", "mixed"]
 types = Dict(
@@ -56,15 +62,15 @@ function bisection(l, r, fun; maxiter = 1_000)
     lval = fun(l)
     rval = fun(r)
 
-    sign(lval)*sign(rval) == 1 && error("bisection: root is not between l and r")
+    sign(lval) * sign(rval) == 1 && error("bisection: root is not between l and r")
     if lval > 0
         gun = fun
         fun = t -> -gun(t)
     end
 
     m = 0.0
-    for _ in 1:maxiter
-        m = (l+r)/2
+    for _ = 1:maxiter
+        m = (l + r) / 2
         mval = fun(m)
         abs(mval) < 1e-16 && break
         if mval < 0
@@ -84,4 +90,3 @@ include("errors.jl")
 include("analysis.jl")
 
 end # module
-#bla

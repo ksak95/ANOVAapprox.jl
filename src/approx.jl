@@ -56,7 +56,7 @@ mutable struct approx
             for i = 1:length(U)
                 u = U[i]
                 if u != []
-                    if length(N[i])!=length(u)
+                    if length(N[i]) != length(u)
                         error("Vector N has for the set", u, "not the right length")
                     end
                 end
@@ -100,12 +100,25 @@ mutable struct approx
             end
 
             GC.gc()
-            if classification
-                trafo = GroupedTransform(gt_systems[basis], U, N, Xt; fastmult = fastmult, basis_vect = basis_vect)
-            else
-                trafo = GroupedTransform(gt_systems[basis], U, N, Xt; fastmult = fastmult, basis_vect = basis_vect)
-            end
-            new(basis, X, y, U, N, trafo, Dict{Float64,GroupedCoefficients}(),classification,basis_vect)
+            trafo = GroupedTransform(
+                gt_systems[basis],
+                U,
+                N,
+                Xt;
+                fastmult = fastmult,
+                basis_vect = basis_vect,
+            )
+            new(
+                basis,
+                X,
+                y,
+                U,
+                N,
+                trafo,
+                Dict{Float64,GroupedCoefficients}(),
+                classification,
+                basis_vect,
+            )
             #f(t) = println("Finalizing ANOVA")
             #finalizer(f, x)
         else
@@ -115,15 +128,15 @@ mutable struct approx
 end
 
 function approx(
-        X::Matrix{Float64},
-        y::Union{Vector{ComplexF64},Vector{Float64}},
-        U::Vector{Vector{Int}},
-        N::Vector{Int},
-        basis::String = "cos";
-        classification::Bool = false,
-        basis_vect::Vector{String} = Vector{String}([]),
-        fastmult::Bool = classification ? true : false,
-    )
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
+    U::Vector{Vector{Int}},
+    N::Vector{Int},
+    basis::String = "cos";
+    classification::Bool = false,
+    basis_vect::Vector{String} = Vector{String}([]),
+    fastmult::Bool = classification ? true : false,
+)
 
     ds = maximum([length(u) for u in U])
 
@@ -146,7 +159,16 @@ function approx(
         end
     end
 
-    return approx(X, y, U, bws, basis; classification = classification, basis_vect = basis_vect, fastmult = fastmult)
+    return approx(
+        X,
+        y,
+        U,
+        bws,
+        basis;
+        classification = classification,
+        basis_vect = basis_vect,
+        fastmult = fastmult,
+    )
 end
 
 function approx(
@@ -160,7 +182,16 @@ function approx(
     fastmult::Bool = classification ? true : false,
 )
     Uds = get_superposition_set(size(X, 1), ds)
-    return approx(X, y, Uds, N, basis; classification = classification, basis_vect = basis_vect, fastmult = fastmult)
+    return approx(
+        X,
+        y,
+        Uds,
+        N,
+        basis;
+        classification = classification,
+        basis_vect = basis_vect,
+        fastmult = fastmult,
+    )
 end
 
 
@@ -289,7 +320,7 @@ This function evaluates the approximation on the nodes `X` for the regularizatio
 function evaluate(
     a::approx,
     X::Matrix{Float64},
-    λ::Float64
+    λ::Float64,
 )::Union{Vector{ComplexF64},Vector{Float64}}
     basis = a.basis
 
@@ -327,7 +358,6 @@ This function evaluates the approximation on the nodes `a.X` for the regularizat
 """
 function evaluate(a::approx, λ::Float64)::Union{Vector{ComplexF64},Vector{Float64}}
     return a.trafo * a.fc[λ]
-    
 end
 
 @doc raw"""
@@ -394,7 +424,7 @@ function evaluateANOVAterms(
     
     trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt, a.basis_vect)
 
-    for j=1:length(a.U)
+    for j = 1:length(a.U)
         u = a.U[j]
         values[:,j] = trafo[u] * a.fc[λ][u]
     end

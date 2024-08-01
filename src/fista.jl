@@ -122,7 +122,7 @@ function fista!(
     what::GroupedCoefficients;
     L = "adaptive",
     max_iter::Int = 25,
-    classification::Bool = false
+    classification::Bool = false,
 )
     adaptive = (L == "adaptive")
     if adaptive
@@ -135,7 +135,10 @@ function fista!(
     hhat = GroupedCoefficients(ghat.setting, copy(vec(ghat)))
     t = 1.0
     if classification
-        val = [(1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) + λ * sum(abs.(hhat.data))]
+        val = [
+            (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) +
+            λ * sum(abs.(hhat.data)),
+        ]
     else
         val = [norm((F * hhat) - y)^2 / 2 + λ * sum(norms(hhat, what))]
     end
@@ -145,7 +148,7 @@ function fista!(
         t_old = t
 
         if classification
-            fgrad = F' * (1 / length(y)* y .* (∇loss2_function.(y .* (F * hhat)))) #TODO: ghat or hhat
+            fgrad = F' * (1 / length(y) * y .* (∇loss2_function.(y .* (F * hhat)))) #TODO: ghat or hhat
         else
             Fhhat = F * hhat
             fgrad = (F' * (Fhhat - y))
@@ -153,14 +156,14 @@ function fista!(
         while true
             # p_L(hhat)
             if classification
-                for k = 1 : length(ghat.data)
+                for k = 1:length(ghat.data)
                     #fhat > 0:
                     if L * hhat[k] - fgrad[k] > λ
-                        ghat[k] = hhat[k] - 1/L * fgrad[k] - 1/L * λ
-                    #fhat < 0:
+                        ghat[k] = hhat[k] - 1 / L * fgrad[k] - 1 / L * λ
+                        #fhat < 0:
                     elseif fgrad[k] - L * hhat[k] > λ
-                        ghat[k] = hhat[k] - 1/L * fgrad[k] + 1/L * λ
-                    else 
+                        ghat[k] = hhat[k] - 1 / L * fgrad[k] + 1 / L * λ
+                    else
                         ghat[k] = 0.0
                     end
                 end
@@ -185,7 +188,11 @@ function fista!(
 
             if !adaptive
                 if classification
-                    append!(val, (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) + λ * sum(abs.(hhat.data)))
+                    append!(
+                        val,
+                        (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) +
+                        λ * sum(abs.(hhat.data)),
+                    )
                 else
                     append!(val, norm((Fhhat) - y)^2 / 2 + λ * sum(norms(hhat, what)))
                 end
@@ -194,7 +201,9 @@ function fista!(
 
             # F
             if classification
-                Fvalue = (1 / length(y)) * sum(loss2_function.(y .* (F * ghat))) + λ * sum(abs.(ghat.data))
+                Fvalue =
+                    (1 / length(y)) * sum(loss2_function.(y .* (F * ghat))) +
+                    λ * sum(abs.(ghat.data))
             else
                 Fvalue = norm((F * ghat) - y)^2 / 2 + λ * sum(norms(ghat, what))
             end
@@ -205,8 +214,7 @@ function fista!(
                 (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) + 
                 dot(vec(ghat - hhat), vec(fgrad)) +
                 L / 2 * norm(vec(ghat - hhat))^2 +
-                λ * sum(abs.(vec(ghat)))
-                )
+                λ * sum(abs.(vec(ghat))))
             else
                 Q = (
                     norm((Fhhat) - y)^2 / 2 +
