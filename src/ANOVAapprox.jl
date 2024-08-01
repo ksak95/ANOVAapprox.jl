@@ -1,7 +1,7 @@
 module ANOVAapprox
 
 using GroupedTransforms,
-    LinearAlgebra, IterativeSolvers, LinearMaps, SpecialFunctions, Statistics, MultivariateAnomalies
+    LinearAlgebra, IterativeSolvers, LinearMaps, SpecialFunctions, Statistics, MultivariateAnomalies, Base.Threads
 
 bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4", "mixed"]
 types = Dict(
