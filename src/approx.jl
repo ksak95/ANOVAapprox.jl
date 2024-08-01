@@ -101,9 +101,9 @@ mutable struct approx
 
             GC.gc()
             if classification
-                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt; fastmult = fastmult, basis_vect = basis_vect)
+                trafo = GroupedTransform(gt_systems[basis], U, N, Xt; fastmult = fastmult, basis_vect = basis_vect)
             else
-                trafo = GroupedTransform(gt_systems[basis], U, bw, Xt; fastmult = fastmult, basis_vect = basis_vect)
+                trafo = GroupedTransform(gt_systems[basis], U, N, Xt; fastmult = fastmult, basis_vect = basis_vect)
             end
             new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}(),classification,basis_vect)
             #f(t) = println("Finalizing ANOVA")
