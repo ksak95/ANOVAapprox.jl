@@ -18,7 +18,7 @@ y_test = [TestFunctionPeriodic.f(X_test[:, i]) for i = 1:M]
 
 ####  ####
 
-ads = ANOVAapprox.approx(X, complex(y), ds, bw, "mixed", basis_vect)
+ads = ANOVAapprox.approx(X, complex(y), ds, bw, "mixed"; basis_vect = basis_vect)
 ANOVAapprox.approximate(ads, lambda = λs)
 
 println("AR: ", sum(ANOVAapprox.get_AttributeRanking(ads, 0.0)))
@@ -26,7 +26,7 @@ println("AR: ", sum(ANOVAapprox.get_AttributeRanking(ads, 0.0)))
 
 bw = ANOVAapprox.get_orderDependentBW(TestFunctionPeriodic.AS, [128, 32])
 
-aU = ANOVAapprox.approx(X, complex(y), TestFunctionPeriodic.AS, bw, "mixed", basis_vect)
+aU = ANOVAapprox.approx(X, complex(y), TestFunctionPeriodic.AS, bw, "mixed"; basis_vect)
 ANOVAapprox.approximate(aU, lambda = λs)
 
 err_L2_ds =
