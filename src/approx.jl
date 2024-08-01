@@ -23,20 +23,25 @@ mutable struct approx
     X::Matrix{Float64}
     y::Union{Vector{ComplexF64},Vector{Float64}}
     U::Vector{Vector{Int}}
-    N::Vector{Int}
+    N::Vector{Vector{Int}}
     trafo::GroupedTransform
     fc::Dict{Float64,GroupedCoefficients}
+    classification::Bool
+    basis_vect::Vector{String}
+    fastmult::Bool
 
     function approx(
         X::Matrix{Float64},
         y::Union{Vector{ComplexF64},Vector{Float64}},
         U::Vector{Vector{Int}},
-        N::Vector{Int},
-        basis::String = "cos",
+        N::Vector{Vector{Int}},
+        basis::String = "cos";
+        classification::Bool = false,
+        basis_vect::Vector{String} = Vector{String}([]),
+        fastmult::Bool = classification ? true : false,
     )
         if basis in bases
             M = size(X, 2)
-            ds = maximum([length(u) for u in U])
 
             if !isa(y, vtypes[basis])
                 error(
@@ -48,14 +53,22 @@ mutable struct approx
                 error("y needs as many entries as X has columns.")
             end
 
-            if (length(N) != length(U)) && (length(N) != ds)
-                error("N needs to have |U| or max |u| entries.")
+            for i = 1:length(U)
+                u = U[i]
+                if u != []
+                    if length(N[i]) != length(u)
+                        error("Vector N has for the set", u, "not the right length")
+                    end
+                end
             end
 
-            if length(N) == ds
-                bw = get_orderDependentBW(U, N)
-            else
-                bw = N
+            if basis == "mixed"
+                if length(basis_vect) == 0
+                    error("please call approx with basis_vect for a NFMT transform.")
+                end
+                if length(basis_vect) < maximum(U)[1]
+                    error("basis_vect must have an entry for every dimension.")
+                end
             end
 
             if (
@@ -86,8 +99,28 @@ mutable struct approx
                 Xt ./= 4
             end
 
-            trafo = GroupedTransform(gt_systems[basis], U, bw, Xt)
-            return new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}())
+            GC.gc()
+            trafo = GroupedTransform(
+                gt_systems[basis],
+                U,
+                N,
+                Xt;
+                fastmult = fastmult,
+                basis_vect = basis_vect,
+            )
+            new(
+                basis,
+                X,
+                y,
+                U,
+                N,
+                trafo,
+                Dict{Float64,GroupedCoefficients}(),
+                classification,
+                basis_vect,
+            )
+            #f(t) = println("Finalizing ANOVA")
+            #finalizer(f, x)
         else
             error("Basis not found.")
         end
@@ -97,12 +130,68 @@ end
 function approx(
     X::Matrix{Float64},
     y::Union{Vector{ComplexF64},Vector{Float64}},
+    U::Vector{Vector{Int}},
+    N::Vector{Int},
+    basis::String = "cos";
+    classification::Bool = false,
+    basis_vect::Vector{String} = Vector{String}([]),
+    fastmult::Bool = classification ? true : false,
+)
+
+    ds = maximum([length(u) for u in U])
+
+    if (length(N) != length(U)) && (length(N) != ds)
+        error("N needs to have |U| or max |u| entries.")
+    end
+
+    if length(N) == ds
+        bw = get_orderDependentBW(U, N)
+    else
+        bw = N
+    end
+    bws = Vector{Vector{Int}}(undef, length(U))
+    for i = 1:length(U)
+        u = U[i]
+        if u == []
+            bws[i] = fill(0, length(u))
+        else
+            bws[i] = fill(bw[i], length(u))
+        end
+    end
+
+    return approx(
+        X,
+        y,
+        U,
+        bws,
+        basis;
+        classification = classification,
+        basis_vect = basis_vect,
+        fastmult = fastmult,
+    )
+end
+
+function approx(
+    X::Matrix{Float64},
+    y::Union{Vector{ComplexF64},Vector{Float64}},
     ds::Int,
     N::Vector{Int},
-    basis::String = "cos",
+    basis::String = "cos";
+    classification::Bool = false,
+    basis_vect::Vector{String} = Vector{String}([]),
+    fastmult::Bool = classification ? true : false,
 )
     Uds = get_superposition_set(size(X, 1), ds)
-    return approx(X, y, Uds, N, basis)
+    return approx(
+        X,
+        y,
+        Uds,
+        N,
+        basis;
+        classification = classification,
+        basis_vect = basis_vect,
+        fastmult = fastmult,
+    )
 end
 
 
@@ -118,7 +207,7 @@ function approximate(
     max_iter::Int = 50,
     weights::Union{Vector{Float64},Nothing} = nothing,
     verbose::Bool = false,
-    solver::String = "lsqr",
+    solver::String = a.classification ? "fista" : "lsqr",
     tol::Float64 = 1e-8,
 )::Nothing
     M = size(a.X, 2)
@@ -134,7 +223,7 @@ function approximate(
         end
     end
 
-    if a.basis == "per"
+    if (a.basis == "per" || a.basis == "mixed")
         what = GroupedCoefficients(a.trafo.setting, complex(w))
     else
         what = GroupedCoefficients(a.trafo.setting, w)
@@ -148,9 +237,13 @@ function approximate(
         tmp = copy(a.fc[λs[idx]].data)
     end
 
+    if a.classification && solver != "fista"
+        error("Classification is only implemented with the fista solver.")
+    end
+
     if solver == "lsqr"
         diag_w_sqrt = sqrt(λ) .* sqrt.(w)
-        if a.basis == "per"
+        if (a.basis == "per" || a.basis == "mixed")
             F_vec = LinearMap{ComplexF64}(
                 fhat -> vcat(
                     a.trafo * GroupedCoefficients(a.trafo.setting, fhat),
@@ -193,7 +286,7 @@ function approximate(
         end
     elseif solver == "fista"
         ghat = GroupedCoefficients(a.trafo.setting, tmp)
-        fista!(ghat, a.trafo, a.y, λ, what, max_iter = max_iter)
+        fista!(ghat, a.trafo, a.y, λ, what; max_iter = max_iter, a.classification)
         a.fc[λ] = ghat
     else
         error("Solver not found.")
@@ -253,8 +346,9 @@ function evaluate(
         Xt ./= 4
     end
 
-    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt)
+    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt; a.basis_vect)
     return trafo * a.fc[λ]
+
 end
 
 @doc raw"""
@@ -327,12 +421,11 @@ function evaluateANOVAterms(
     else
         values = zeros(Float64, size(Xt)[2], length(a.U))
     end
-    
-    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt)
+    trafo = GroupedTransform(gt_systems[basis], a.U, a.N, Xt, a.basis_vect)
 
-    for j=1:length(a.U)
+    for j = 1:length(a.U)
         u = a.U[j]
-        values[:,j] = trafo[u] * a.fc[λ][u]
+        values[:, j] = trafo[u] * a.fc[λ][u]
     end
 
     return values
