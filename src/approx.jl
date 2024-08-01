@@ -105,7 +105,7 @@ mutable struct approx
             else
                 trafo = GroupedTransform(gt_systems[basis], U, N, Xt; fastmult = fastmult, basis_vect = basis_vect)
             end
-            new(basis, X, y, U, bw, trafo, Dict{Float64,GroupedCoefficients}(),classification,basis_vect)
+            new(basis, X, y, U, N, trafo, Dict{Float64,GroupedCoefficients}(),classification,basis_vect)
             #f(t) = println("Finalizing ANOVA")
             #finalizer(f, x)
         else
