@@ -1,9 +1,15 @@
 module ANOVAapprox
 
-using GroupedTransforms,
-    LinearAlgebra, IterativeSolvers, LinearMaps, Distributed, SpecialFunctions
+using GroupedTransforms
+using LinearAlgebra
+using IterativeSolvers
+using LinearMaps
+using SpecialFunctions
+using Statistics
+using MultivariateAnomalies
+using Base.Threads
 
-bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4"]
+bases = ["per", "cos", "cheb", "std", "chui1", "chui2", "chui3", "chui4", "mixed"]
 types = Dict(
     "per" => ComplexF64,
     "cos" => Float64,
@@ -13,6 +19,7 @@ types = Dict(
     "chui2" => Float64,
     "chui3" => Float64,
     "chui4" => Float64,
+    "mixed" => ComplexF64,
 )
 vtypes = Dict(
     "per" => Vector{ComplexF64},
@@ -23,6 +30,7 @@ vtypes = Dict(
     "chui2" => Vector{Float64},
     "chui3" => Vector{Float64},
     "chui4" => Vector{Float64},
+    "mixed" => Vector{ComplexF64},
 )
 gt_systems = Dict(
     "per" => "exp",
@@ -33,6 +41,7 @@ gt_systems = Dict(
     "chui2" => "chui2",
     "chui3" => "chui3",
     "chui4" => "chui4",
+    "mixed" => "mixed",
 )
 
 function get_orderDependentBW(U::Vector{Vector{Int}}, N::Vector{Int})::Vector{Int}
@@ -47,6 +56,32 @@ function get_orderDependentBW(U::Vector{Vector{Int}}, N::Vector{Int})::Vector{In
     end
 
     return N_bw
+end
+
+function bisection(l, r, fun; maxiter = 1_000)
+    lval = fun(l)
+    rval = fun(r)
+
+    sign(lval) * sign(rval) == 1 && error("bisection: root is not between l and r")
+    if lval > 0
+        gun = fun
+        fun = t -> -gun(t)
+    end
+
+    m = 0.0
+    for _ = 1:maxiter
+        m = (l + r) / 2
+        mval = fun(m)
+        abs(mval) < 1e-16 && break
+        if mval < 0
+            l = m
+            lval = mval
+        else
+            r = m
+            rval = mval
+        end
+    end
+    return m
 end
 
 include("fista.jl")

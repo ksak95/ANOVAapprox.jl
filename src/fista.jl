@@ -97,6 +97,23 @@ function λ2ξ(λ, what, y; verbose = false)
     return ξ
 end
 
+function loss2_function(x)
+    if x > 1
+        return 0
+    else
+        return (1 - x)^2
+    end
+end
+
+function ∇loss2_function(x)
+    # derivative of quadratic loss:
+    if x > 1
+        return 0
+    else
+        return (1 - x) * -2
+    end
+end
+
 function fista!(
     ghat::GroupedCoefficients,
     F::GroupedTransform,
@@ -105,6 +122,7 @@ function fista!(
     what::GroupedCoefficients;
     L = "adaptive",
     max_iter::Int = 25,
+    classification::Bool = false,
 )
     adaptive = (L == "adaptive")
     if adaptive
@@ -116,47 +134,97 @@ function fista!(
 
     hhat = GroupedCoefficients(ghat.setting, copy(vec(ghat)))
     t = 1.0
-    val = [norm((F * hhat) - y)^2 / 2 + λ * sum(norms(hhat, what))]
+    if classification
+        val = [
+            (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) +
+            λ * sum(abs.(hhat.data)),
+        ]
+    else
+        val = [norm((F * hhat) - y)^2 / 2 + λ * sum(norms(hhat, what))]
+    end
 
     for k = 1:max_iter-1
         ghat_old = GroupedCoefficients(ghat.setting, copy(vec(ghat)))
         t_old = t
 
-        Fhhat = F * hhat
-        fgrad = (F' * (Fhhat - y))
+        if classification
+            fgrad = F' * (1 / length(y) * y .* (∇loss2_function.(y .* (F * hhat)))) #TODO: ghat or hhat
+        else
+            Fhhat = F * hhat
+            fgrad = (F' * (Fhhat - y))
+        end
         while true
             # p_L(hhat)
-            set_data!(ghat, vec(hhat - 1 / L * fgrad))
+            if classification
+                for k = 1:length(ghat.data)
+                    #fhat > 0:
+                    if L * hhat[k] - fgrad[k] > λ
+                        ghat[k] = hhat[k] - 1 / L * fgrad[k] - 1 / L * λ
+                        #fhat < 0:
+                    elseif fgrad[k] - L * hhat[k] > λ
+                        ghat[k] = hhat[k] - 1 / L * fgrad[k] + 1 / L * λ
+                    else
+                        ghat[k] = 0.0
+                    end
+                end
+            else
+                set_data!(ghat, vec(hhat - 1 / L * fgrad))
 
-            mask = map(u -> (λ / L)^2 < sum(abs.(ghat[u] .^ 2 ./ what[u])), U)
-            ξs = pmap(u -> λ2ξ(λ / L, what[u], ghat[u]), U[mask])
-            for u in U[.!mask]
-                ghat[u] = 0 * ghat[u]
-            end
-            for (u, ξ) in zip(U[mask], ξs)
-                if ξ == Inf
+                mask = map(u -> (λ / L)^2 < sum(abs.(ghat[u] .^ 2 ./ what[u])), U)
+                ξs = map(fetch, map(u -> @spawn(λ2ξ(λ / L, what[u], ghat[u])), U[mask]))
+                #ξs = pmap(u -> λ2ξ(λ / L, what[u], ghat[u]), U[mask])
+                for u in U[.!mask]
                     ghat[u] = 0 * ghat[u]
-                else
-                    ghat[u] = ghat[u] ./ (1 .+ ξ * what[u])
+                end
+                for (u, ξ) in zip(U[mask], ξs)
+                    if ξ == Inf
+                        ghat[u] = 0 * ghat[u]
+                    else
+                        ghat[u] = ghat[u] ./ (1 .+ ξ * what[u])
+                    end
                 end
             end
 
 
             if !adaptive
-                append!(val, norm((Fhhat) - y)^2 / 2 + λ * sum(norms(hhat, what)))
+                if classification
+                    append!(
+                        val,
+                        (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) +
+                        λ * sum(abs.(hhat.data)),
+                    )
+                else
+                    append!(val, norm((Fhhat) - y)^2 / 2 + λ * sum(norms(hhat, what)))
+                end
                 break
             end
 
             # F
-            Fvalue = norm((F * ghat) - y)^2 / 2 + λ * sum(norms(ghat, what))
+            if classification
+                Fvalue =
+                    (1 / length(y)) * sum(loss2_function.(y .* (F * ghat))) +
+                    λ * sum(abs.(ghat.data))
+            else
+                Fvalue = norm((F * ghat) - y)^2 / 2 + λ * sum(norms(ghat, what))
+            end
 
             # Q
-            Q = (
-                norm((Fhhat) - y)^2 / 2 +
-                dot(vec(ghat - hhat), vec(fgrad)) +
-                L / 2 * norm(vec(ghat - hhat))^2 +
-                λ * sum(norms(ghat, what))
-            )
+            if classification
+                Q = (
+                    (1 / length(y)) * sum(loss2_function.(y .* (F * hhat))) +
+                    dot(vec(ghat - hhat), vec(fgrad)) +
+                    L / 2 * norm(vec(ghat - hhat))^2 +
+                    λ * sum(abs.(vec(ghat)))
+                )
+            else
+                Q = (
+                    norm((Fhhat) - y)^2 / 2 +
+                    dot(vec(ghat - hhat), vec(fgrad)) +
+                    L / 2 * norm(vec(ghat - hhat))^2 +
+                    λ * sum(norms(ghat, what))
+                )
+            end
+
 
             if real(Fvalue) < real(Q) + 1e-10 || L >= 2^32
                 append!(val, Fvalue)
