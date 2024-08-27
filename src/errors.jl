@@ -145,7 +145,13 @@ end
 This function computes the relative ``L_2`` error of the function given the norm `norm` and a function that returns the basis coefficients `bc_fun` for regularization parameter `λ`.
 """
 function get_L2error(a::approx, norm::Float64, bc_fun::Function, λ::Float64)::Float64
-    if a.basis == "per" || a.basis == "cos" || a.basis == "cheb" || a.basis == "std"
+    if (
+        a.basis == "per" ||
+        a.basis == "cos" ||
+        a.basis == "cheb" ||
+        a.basis == "std" ||
+        a.basis == "mixed"
+    )
         error = norm^2
         index_set = get_IndexSet(a.trafo.setting, size(a.X, 1))
 
@@ -153,7 +159,6 @@ function get_L2error(a::approx, norm::Float64, bc_fun::Function, λ::Float64)::F
             k = index_set[:, i]
             error += abs(bc_fun(k) - a.fc[λ][i])^2 - abs(bc_fun(k))^2
         end
-
         return sqrt(error) / norm
     else
         error("The L2-error is not implemented for this basis")
@@ -172,7 +177,8 @@ end
 ################
 
 function get_acc(a::approx, λ::Float64)::Float64
-    return count(sign.(evaluate(a, λ)) .== a.y)/length(a.y)*100.00
+    y_eval = evaluate(a, λ)
+    return count(sign.(y_eval) .== a.y) / length(a.y) * 100.00
 end
 
 function get_acc(
@@ -181,7 +187,8 @@ function get_acc(
     y::Union{Vector{ComplexF64},Vector{Float64}},
     λ::Float64,
 )::Float64
-    return count(sign.(evaluate(a, X, λ)) .== y)/length(y)*100.0
+    y_eval = evaluate(a, X, λ)
+    return count(sign.(y_eval) .== y) / length(y) * 100.0
 end
 
 function get_acc(a::approx)::Dict{Float64,Float64}
@@ -211,10 +218,10 @@ end
 function get_auc(a::approx, λ::Float64)::Float64
     y_eval = evaluate(a, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
-    y_ = copy(a.y)
-    y_[y_ .== -1.0] .= 0
-    y_[y_ .== 1.0] .= 1
-    y_int = Vector{Int64}(y_)
+    y = a.y
+    y[y.==-1.0] .= 0
+    y[y.==1.0] .= 1
+    y_int = Vector{Int64}(y)
     return MultivariateAnomalies.auc(y_sc, y_int)
 end
 
@@ -226,10 +233,9 @@ function get_auc(
 )::Float64
     y_eval = evaluate(a, X, λ)
     y_sc = (y_eval .- minimum(y_eval)) / (maximum(y_eval) - minimum(y_eval))
-    y_=copy(y)
-    y_[y .== -1.0] .= 0
-    y_[y .== 1.0] .= 1
-    y_int = Vector{Int64}(y_)
+    y[y.==-1.0] .= 0
+    y[y.==1.0] .= 1
+    y_int = Vector{Int64}(y)
     return MultivariateAnomalies.auc(y_sc, y_int)
 end
 

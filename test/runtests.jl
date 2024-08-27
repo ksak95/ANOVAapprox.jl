@@ -1,6 +1,4 @@
-using Distributed
-addprocs(3)
-@everywhere using ANOVAapprox
+using ANOVAapprox
 using Test
 using Random
 using Aqua
@@ -16,8 +14,8 @@ using .TestFunctionCheb
 
 rng = MersenneTwister(1234)
 
-tests = ["misc", "cheb_fista", "cheb_lsqr", "per_lsqr", "per_fista", "wav_lsqr"]
-#tests = ["misc", "cheb_lsqr", "per_lsqr", "per_fista"]
+tests =
+    ["misc", "cheb_fista", "cheb_lsqr", "per_lsqr", "per_fista", "wav_lsqr", "mixed_lsqr"]
 
 for t in tests
     include("$(t).jl")
